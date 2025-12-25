@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment Confirmation - Trading Automation Masterclass</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <section class="hero-header">
+    <div class="container">
+      <div class="confirmation-card">
+        <div class="confirmation-icon">✅</div>
+        <h1 class="confirmation-title">Payment Confirmation Received!</h1>
+        <p class="confirmation-subtitle">Thank you for confirming your payment. We've received your notification and will verify your transaction shortly.</p>
+
+        <div class="next-steps-card">
+          <h2>📧 Next Steps - Important!</h2>
+          <p><strong>To complete your purchase and receive instant access to your $6,500+ bundle, please:</strong></p>
+          
+          <div class="step-list">
+            <div class="step">
+              <span class="step-number">1</span>
+              <div class="step-content">
+                <h3>🔗 Confirm Your Email First</h3>
+                <div class="email-warning">
+                  <p><strong>⚠️ IMPORTANT:</strong> Before we can send you the $6,500+ bundle, you must confirm your email address.</p>
+                  <p><strong>Check your inbox</strong> (and spam/junk folder) for a confirmation email from us and <strong>click the confirmation link</strong>.</p>
+                  <p><em>Without email confirmation, you won't be able to receive your lead magnet or masterclass access!</em></p>
+                </div>
+                <div class="email-help">
+                  <p>📧 <strong>Don't see the email?</strong></p>
+                  <ul>
+                    <li>Check your spam/junk folder</li>
+                    <li>Look for emails from "noreply@" or "support@freedomtrader.com"</li>
+                    <li>Add our email to your contacts</li>
+                    <li>Wait 2-3 minutes and refresh your inbox</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="step">
+              <span class="step-number">2</span>
+              <div class="step-content">
+                <h3>📧 Send Payment Proof</h3>
+                <p>After confirming your email, send your payment receipt, transaction ID, or screenshot to:</p>
+                <div class="contact-email">
+                  <strong>support@freedomtrader.com</strong>
+                  <button class="copy-email-btn" onclick="copyEmail()">Copy Email</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="step">
+              <span class="step-number">3</span>
+              <div class="step-content">
+                <h3>📋 Include These Details</h3>
+                <ul>
+                  <li><strong>Transaction ID</strong> or Reference Number</li>
+                  <li><strong>Payment Amount</strong> and Currency</li>
+                  <li><strong>Date & Time</strong> of payment</li>
+                  <li><strong>Your Email</strong> (used during signup)</li>
+                  <li><strong>Payment Method</strong> used (crypto, bank transfer, etc.)</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="step">
+              <span class="step-number">4</span>
+              <div class="step-content">
+                <h3>🎯 Get Instant Access</h3>
+                <p>Once your email is confirmed and payment verified (usually within 2-4 hours), you'll receive:</p>
+                <ul>
+                  <li>✅ Download links for your $6,500+ AI Trading Bundle</li>
+                  <li>✅ Live Masterclass access details</li>
+                  <li>✅ Exclusive member portal login</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="urgency-note">
+            <p><strong>⏰ Processing Time:</strong> Payments are typically verified within 2-4 hours during business hours (9 AM - 6 PM EST). Weekend payments are processed on Monday morning.</p>
+          </div>
+
+          <div class="contact-info">
+            <h3>Need Help?</h3>
+            <p>If you have any questions or need assistance, contact us at:</p>
+            <p><strong>Email:</strong> support@freedomtrader.com<br>
+            <strong>Response Time:</strong> Usually within 2-4 hours</p>
+          </div>
+
+          <div class="backup-notice">
+            <h4>🔒 Secure Processing</h4>
+            <p>Your payment confirmation has been logged securely. Even if you close this page, we have your notification and will process your payment as soon as we receive your proof of payment email.</p>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="primary-btn" onclick="window.open('mailto:support@freedomtrader.com?subject=Payment Proof - Trading Automation Bundle&body=Hi,%0D%0A%0D%0APlease find attached my payment proof for the Trading Automation Masterclass bundle.%0D%0A%0D%0ATransaction Details:%0D%0A- Transaction ID: [Your transaction ID]%0D%0A- Amount: [Payment amount]%0D%0A- Payment Method: [Crypto/Bank Transfer/Other]%0D%0A- Date: [Payment date]%0D%0A- My Email: [Your email]%0D%0A%0D%0AThank you!')">📧 Send Payment Proof Email</button>
+          <button class="secondary-btn" onclick="window.location.href='/'">← Back to Homepage</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Copy toast notification -->
+  <div id="copy-toast" class="copy-toast">Email copied to clipboard!</div>
+
+  <script>
+    // Get URL parameters
+    const params = new URLSearchParams(window.location.search);
+    const paymentMethod = params.get('method') || 'your selected payment method';
+    
+    // Update content based on payment method
+    if (paymentMethod !== 'your selected payment method') {
+      const methodElements = document.querySelectorAll('.payment-method-placeholder');
+      methodElements.forEach(el => {
+        el.textContent = paymentMethod;
+      });
+    }
+
+    // Copy email function
+    function copyEmail() {
+      const email = 'support@freedomtrader.com';
+      navigator.clipboard.writeText(email).then(() => {
+        showCopyToast('Email copied to clipboard!');
+      }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = email;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+        showCopyToast('Email copied to clipboard!');
+      });
+    }
+
+    // Show copy toast
+    function showCopyToast(message) {
+      const toast = document.getElementById('copy-toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Auto-focus on email button after page load
+    window.addEventListener('load', () => {
+      document.querySelector('.primary-btn').focus();
+    });
+  </script>
+</body>
+</html>

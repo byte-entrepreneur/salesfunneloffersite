@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bundle — Checkout</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* tighten top spacing to match landing page */
+    .vsl-wrapper{max-width:900px;margin:18px auto;padding:24px;background:#111;border:2px solid #FFD700;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,0.5)}
+    .vsl-hero{display:flex;gap:28px;align-items:flex-start}
+    .vsl-copy{flex:1}
+    .vsl-video{flex:0 0 420px}
+    .buy-ctas{margin-top:18px;display:flex;gap:12px;align-items:center;justify-content:center}
+    .meta{color:#aaa;font-size:14px}
+    /* Gold CTA to match landing page */
+    .btn{background:#FFD700;color:#000;padding:12px 20px;border-radius:12px;font-weight:700;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(255,215,0,0.3)}
+
+    /* Purchase area entrance animation */
+    @keyframes purchaseEnter { from { opacity: 0; transform: translateY(12px) scale(0.995); } to { opacity:1; transform: none; } }
+    .purchase-enter { animation: purchaseEnter 420ms cubic-bezier(.2,.9,.3,1) both; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="vsl-wrapper">
+      <div id="greeting" class="meta">Preparing your offer...</div>
+      <!-- eligibility dot removed -->
+
+      <!-- (Mockup removed) Top video will appear under the title -->
+
+      <div class="vsl-hero" style="flex-direction:column;gap:16px">
+        <div class="vsl-copy">
+          <h1 style="margin:0 0 8px">How to create a sales conversion system that makes your customers spend 3x-8x more on your products/service than you spent acquiring them within 30 days</h1>
+          <!-- Video placeholder directly under the title -->
+          <div class="video-placeholder" style="width:100%;max-width:640px;margin:12px auto 18px;">
+            <div style="position:relative;padding-top:56.25%;background:#000;border-radius:10px;overflow:hidden;box-shadow:0 20px 50px rgba(23,50,11,0.06);">
+              <!-- Insert iframe or embed here later -->
+              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px">Video placeholder</div>
+            </div>
+          </div>
+          <p id="offerText" style="display:none;margin:0 0 16px">This short video explains what's included in the Freedom Trader's Starter Kit and why it's worth $49. Your information was carried over from the previous page.</p>
+
+          <div id="purchaseArea" style="display:none;text-align:center;">
+            <div class="buy-ctas">
+              <!-- Primary buy button (Naira via Paystack) -->
+              <button id="buyNow" class="btn buy-now" style="display:none">Buy Now — $49</button>
+            </div>
+
+            <!-- Secure text directly below the button, centered -->
+            <div id="secureMeta" class="meta" style="display:none;margin-top:10px;text-align:center;">Secure checkout. 30-day money-back guarantee.</div>
+
+            <!-- Countdown timer (appears when offer is live) -->
+            <div id="countdownTimer" style="display:none;margin-top:12px;font-weight:900;color:#c11b1b;font-size:28px;">
+              <!-- Countdown will show HH:MM:SS here -->
+            </div>
+
+            <!-- Here's what you get block (user will provide copy) -->
+            <div id="whatYouGet" style="display:none;margin-top:16px;text-align:left;max-width:760px;margin-left:auto;margin-right:auto;">
+              <h3 style="margin:0 0 8px;text-align:center">Here are the $2,000 worth of bonuses you get when you buy now</h3>
+              <div id="whatYouGetContent">
+                <!-- User will supply the purchase copy here -->
+                <!-- Four small cards with placeholder copy -->
+                <div class="what-grid" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;">
+                  <div class="what-card" style="flex:1 1 180px;background:#000;border:2px solid #FFD700;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.3);">
+                    <h4 style="margin:0 0 6px;font-size:15px;color:#FFD700">Multiple Sales Funnels Structure</h4>
+                    <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#ef4444">Value: $1,000</p>
+                    <p style="margin:0;font-size:13px;color:#ccc">How to structure multiple sales funnels for selling and collecting payments for each killer money models at every stage of your customer's journey.</p>
+                  </div>
+                    <div class="what-card" style="flex:1 1 180px;background:#000;border:2px solid #FFD700;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.3);">
+                    <h4 style="margin:0 0 6px;font-size:15px;color:#FFD700">AI Copy Prompts</h4>
+                    <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#ef4444">Value: $500</p>
+                    <p style="margin:0;font-size:13px;color:#ccc">AI Prompts for creating email, sales page & vsl copy that converts skeptical prospects into buyers.</p>
+                  </div>
+                    <div class="what-card" style="flex:1 1 180px;background:#000;border:2px solid #FFD700;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.3);">
+                    <h4 style="margin:0 0 6px;font-size:15px;color:#FFD700">Fast Funnel Creation</h4>
+                    <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#ef4444">Value: $500</p>
+                    <p style="margin:0;font-size:13px;color:#ccc">AI prompts for creating your sales funnels in 30mins or less.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Optional expired message shown when the timer runs out -->
+            <div id="offerExpired" style="display:none;margin-top:12px;color:#8b1e1e;font-weight:700">This offer has expired.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./ebookBuy.js"></script>
+
+  <!-- Blur overlay + modal for crypto / other payment details -->
+  <div id="modalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);z-index:1200;align-items:center;justify-content:center;"> 
+    <div id="modalCard" style="background:#111;border:2px solid #FFD700;border-radius:12px;padding:20px;max-width:520px;width:90%;box-shadow:0 30px 80px rgba(0,0,0,0.8);position:relative;text-align:left;"> 
+      <button id="modalClose" style="position:absolute;right:12px;top:12px;border:none;background:transparent;font-size:18px;cursor:pointer">✕</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <!-- Upsell Modal -->
+  <div id="upsellModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(6px);z-index:1300;align-items:center;justify-content:center;overflow-y:auto;padding:20px">
+    <div style="background:#fff;border-radius:16px;padding:32px;max-width:700px;width:95%;box-shadow:0 40px 100px rgba(0,0,0,0.5);position:relative;margin:auto">
+      <div id="backToStep1" style="text-decoration:underline;cursor:pointer;color:#666;font-size:14px;margin-bottom:16px">&lt;&lt; Back to Step 1</div>
+      <h2 style="margin:0 0 8px;text-align:center;color:var(--deep-green);font-size:28px">🎉 ALMOST DONE - STEP 2</h2>
+      <p style="text-align:center;color:#666;margin:0 0 24px;font-size:16px">CUSTOMIZE YOUR ORDER</p>
+      
+      <div id="upsellOptions">
+        <!-- Upsell Option 1 -->
+        <div class="upsell-card" style="border:2px dashed var(--gold);border-radius:12px;padding:20px;margin-bottom:16px;cursor:pointer;transition:all 0.3s" data-upsell-id="1" data-price="48">
+          <label style="display:flex;align-items:start;cursor:pointer">
+            <input type="checkbox" class="upsell-checkbox" data-upsell-id="1" style="margin-right:12px;margin-top:4px;width:20px;height:20px;cursor:pointer">
+            <div style="flex:1">
+              <h3 style="margin:0 0 8px;font-size:18px;color:var(--deep-green)">High-Converting VSL Masterclass - $48</h3>
+              <p style="margin:0;font-size:14px;color:#555;line-height:1.5">
+                Learn how to create video sales letters that hypnotize viewers and force them to buy. This course reveals the exact formula 
+                top marketers use to write VSLs that convert at 5-10%. Includes templates, scripts, and real VSL breakdowns.
+              </p>
+            </div>
+          </label>
+        </div>
+
+        <!-- Upsell Option 2 -->
+        <div class="upsell-card" style="border:2px dashed var(--gold);border-radius:12px;padding:20px;margin-bottom:24px;cursor:pointer;transition:all 0.3s" data-upsell-id="2" data-price="98">
+          <label style="display:flex;align-items:start;cursor:pointer">
+            <input type="checkbox" class="upsell-checkbox" data-upsell-id="2" style="margin-right:12px;margin-top:4px;width:20px;height:20px;cursor:pointer">
+            <div style="flex:1">
+              <h3 style="margin:0 0 8px;font-size:18px;color:var(--deep-green)">Irresistible Offers Course - $98 <span style="color:#c11b1b;font-size:14px">(Value: $1,000)</span></h3>
+              <p style="margin:0;font-size:14px;color:#555;line-height:1.5">
+                In-depth tutorial on how to create offers people almost never say no to. Master the psychology of pricing, 
+                stack bonuses like a pro, and craft guarantees so strong customers feel stupid NOT buying. This is the secret sauce behind 7-figure funnels.
+              </p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Order Summary -->
+      <div style="background:#f7fafc;border-radius:12px;padding:20px;margin-bottom:20px">
+        <h3 style="margin:0 0 12px;font-size:18px;color:var(--deep-green)">Order Summary</h3>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:15px">
+          <span>Freedom Trader's Starter Kit</span>
+          <span style="font-weight:700">$49.00</span>
+        </div>
+        <div id="upsellSummaryItems"></div>
+        <div style="border-top:2px solid #e2e8f0;margin:12px 0;padding-top:12px;display:flex;justify-content:space-between;font-size:20px;font-weight:900;color:var(--deep-green)">
+          <span>Total:</span>
+          <span id="orderTotal">$49.00</span>
+        </div>
+      </div>
+
+      <button id="proceedToVSL" class="btn" style="background:var(--gold);color:var(--deep-green);padding:16px 24px;border-radius:12px;font-weight:700;border:none;cursor:pointer;font-size:20px;width:100%;box-shadow:0 8px 24px rgba(23,50,11,0.12)">
+        CONTINUE TO CHECKOUT - <span id="btnTotal">$49.00</span>
+      </button>
+    </div>
+  </div>
+
+  <style>
+    .upsell-card:hover {
+      background:#fef9f3;
+      transform:translateY(-2px);
+      box-shadow:0 8px 20px rgba(23,50,11,0.1);
+    }
+    .upsell-card.selected {
+      background:#fef9f3;
+      border-color:var(--deep-green);
+      box-shadow:0 8px 20px rgba(23,50,11,0.15);
+    }
+  </style>
+</body>
+</html>

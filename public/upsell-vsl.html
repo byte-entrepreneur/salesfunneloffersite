@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Special Offer - Don't Miss This!</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+  <style>
+    .vsl-wrapper{max-width:900px;margin:18px auto;padding:24px;background:#111;border:2px solid #FFD700;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,0.5)}
+    .vsl-hero{display:flex;gap:28px;align-items:flex-start;flex-direction:column}
+    .btn{background:#FFD700;color:#000;padding:14px 24px;border-radius:12px;font-weight:700;border:none;cursor:pointer;box-shadow:0 8px 24px rgba(255,215,0,0.3);font-size:18px;width:100%;max-width:500px;margin:20px auto;display:block}
+    .btn:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(23,50,11,0.18)}
+    .decline-link{text-align:center;margin-top:12px;text-decoration:underline;cursor:pointer;color:#666;font-size:14px}
+    .decline-link:hover{color:#333}
+    h1{color:#fff;text-align:center;margin-bottom:20px}
+    .warning-text{color:#c11b1b;font-weight:700;text-align:center;margin-bottom:20px;font-size:20px}
+    .video-container{width:100%;max-width:640px;margin:20px auto;position:relative;padding-top:56.25%;background:#000;border-radius:10px;overflow:hidden;box-shadow:0 20px 50px rgba(23,50,11,0.06)}
+    .video-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="vsl-wrapper">
+      <h1>⚠️ Wait! Your Order is Not Yet Complete</h1>
+      <p class="warning-text">Before you access your Freedom Trader's Starter Kit, please watch this important message below now</p>
+      
+      <div class="vsl-hero">
+        <!-- VSL Video -->
+        <div class="video-container">
+          <div class="video-placeholder">
+            [Your VSL Video Here]
+            <!-- Replace with actual video embed -->
+          </div>
+        </div>
+
+        <div style="width:100%;text-align:center;margin-top:20px">
+          <h2 style="margin-bottom:16px">Add The Complete YouTube Ads Dominance Course to Your Order</h2>
+          <p style="font-size:16px;color:#ccc;margin-bottom:20px">
+            This is a one-time offer that will never be available at this price again. 
+            You'll learn how to generate quality leads for your product, for dirt cheap with Youtube Ads.
+          </p>
+          
+          <div style="background:#000;border:2px solid #FFD700;border-radius:12px;padding:20px;margin:20px auto;max-width:500px">
+            <h3 style="margin:0 0 12px;color:#FFD700">Special One-Time Offer</h3>
+            <p id="offerTimer" style="font-size:16px;color:#FFD700;margin:0 0 12px;font-weight:600">Time remaining: <span id="timerDisplay">Loading...</span></p>
+            <p id="regularPrice" style="font-size:24px;font-weight:700;color:#fff;margin:0">
+              Regular Price: <span style="text-decoration:line-through">$297</span>
+            </p>
+            <p id="specialPrice" style="font-size:32px;font-weight:900;color:#c11b1b;margin:8px 0">
+              Today Only: $97
+            </p>
+            <p id="expiredPrice" style="font-size:32px;font-weight:900;color:#FFD700;margin:8px 0;display:none">
+              Current Price: $297
+            </p>
+            <p id="expiredMessage" style="font-size:14px;color:#ef4444;margin:8px 0 0;display:none;font-weight:600">
+              ⚠️ Special offer has expired. Price increased to $297.
+            </p>
+          </div>
+
+          <button id="acceptUpsell" class="btn">
+            ✓ YES! ADD THE COMPLETE BLUEPRINT TO MY ORDER
+          </button>
+
+          <div class="decline-link" id="declineUpsell">
+            No thanks, I don't want this once in a lifetime ridiculous offer. Take me to my order
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="./upsell-vsl.js"></script>
+</body>
+</html>

@@ -271,6 +271,10 @@
       let total = basePrice;
       let summaryHTML = '';
       
+      // Update base price display
+      const basePriceDisplay = document.getElementById('basePriceDisplay');
+      if(basePriceDisplay) basePriceDisplay.textContent = `$${basePrice.toFixed(2)}`;
+      
       selectedUpsells.forEach(upsell => {
         total += parseFloat(upsell.price);
         summaryHTML += `

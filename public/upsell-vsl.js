@@ -63,6 +63,17 @@
     if(declineLink){
       declineLink.addEventListener('click', async ()=>{
         try {
+          // Remove VSL upsell from order if it was added but not paid for
+          delete order.vslUpsell;
+          
+          // Remove youtube_ads from upsellsSelected if present
+          if(order.upsellsSelected){
+            order.upsellsSelected = order.upsellsSelected.filter(u => u !== 'youtube_ads');
+          }
+          
+          // Save updated order
+          sessionStorage.setItem('orderData', JSON.stringify(order));
+          
           // Calculate total without VSL upsell
           const total = calculateTotal(order);
           
@@ -149,6 +160,16 @@
         },
         onClose: function(){
           console.log('Payment modal closed');
+          // If payment wasn't completed, remove VSL upsell from order
+          const currentOrder = JSON.parse(sessionStorage.getItem('orderData') || '{}');
+          if(currentOrder.vslUpsell){
+            delete currentOrder.vslUpsell;
+            if(currentOrder.upsellsSelected){
+              currentOrder.upsellsSelected = currentOrder.upsellsSelected.filter(function(u) { return u !== 'youtube_ads'; });
+            }
+            sessionStorage.setItem('orderData', JSON.stringify(currentOrder));
+            console.log('VSL upsell removed from order (payment not completed)');
+          }
         },
         callback: function(response){
           console.log('Payment successful:', response);

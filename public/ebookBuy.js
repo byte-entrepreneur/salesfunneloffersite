@@ -280,14 +280,14 @@
         summaryHTML += `
           <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:14px;color:#666">
             <span>${upsell.name}</span>
-            <span style="font-weight:600">$${upsell.price.toFixed(2)}</span>
+            <span style="font-weight:600">₦${upsell.price.toFixed(2)}</span>
           </div>
         `;
       });
       
       if(upsellSummaryItems) upsellSummaryItems.innerHTML = summaryHTML;
-      if(orderTotalEl) orderTotalEl.textContent = `$${total.toFixed(2)}`;
-      if(btnTotalEl) btnTotalEl.textContent = `$${total.toFixed(2)}`;
+      if(orderTotalEl) orderTotalEl.textContent = `₦${total.toFixed(2)}`;
+      if(btnTotalEl) btnTotalEl.textContent = `₦${total.toFixed(2)}`;
     }
 
     // Handle checkbox changes
@@ -301,9 +301,9 @@
           card.classList.add('selected');
           let upsellName = '';
           if(upsellId === '1'){
-            upsellName = 'High-Converting VSL Masterclass';
+            upsellName = '3-Month AI Trading Bot Mentorship';
           } else if(upsellId === '2'){
-            upsellName = 'Irresistible Offers Course';
+            upsellName = '1-on-1 AI Trading Coaching';
           }
           selectedUpsells.push({ id: upsellId, name: upsellName, price: price });
         } else {

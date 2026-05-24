@@ -177,7 +177,7 @@
                 </div>
               </div>
               <div class="modal-address"><div class="addr">TXTRONWALLETADDRESS12345</div><button class="copy-addr" data-addr="TXTRONWALLETADDRESS12345">Copy</button></div>
-              <div class="modal-instructions"><p><span class="network">Network: TRON (TRC-20).</span> Send only USDT via TRON network to this address to make payment. After payment, send a screenshot of payment proof containing details including the transaction ID to the email below. Sending tokens other than USDT.tron to this address will result in loss of funds.</p></div>
+              <div class="modal-instructions"><p><span class="network">Network: TRON (TRC-20).</span> Send only USDT via TRON network to this address to make payment. After payment, send a screenshot [...]
               <div class="modal-confirm-section">
                 <button class="confirm-payment-btn" data-payment-method="USDT.TRON">Confirm Payment</button>
                 <p style="font-size:13px;color:#666;margin-top:8px;">Click this after you've sent the payment to notify us.</p>
@@ -193,7 +193,7 @@
                 </div>
               </div>
               <div class="modal-address"><div class="addr">0xETHWALLETADDRESSABCDE</div><button class="copy-addr" data-addr="0xETHWALLETADDRESSABCDE">Copy</button></div>
-              <div class="modal-instructions"><p><span class="network">Network: Ethereum (ERC-20).</span> Send only USDT via Ethereum (ERC20) network to this address to make payment. After payment, send a screenshot of payment proof containing details including the transaction hash to the email below. Sending tokens other than USDT.erc20 to this address will result in loss of funds.</p></div>
+              <div class="modal-instructions"><p><span class="network">Network: Ethereum (ERC-20).</span> Send only USDT via Ethereum (ERC20) network to this address to make payment. After paymen[...]
               <div class="modal-confirm-section">
                 <button class="confirm-payment-btn" data-payment-method="USDT.ETH">Confirm Payment</button>
                 <p style="font-size:13px;color:#666;margin-top:8px;">Click this after you've sent the payment to notify us.</p>
@@ -209,7 +209,7 @@
                 </div>
               </div>
               <div class="modal-address"><div class="addr">SOLWALLETADDRESSXYZ</div><button class="copy-addr" data-addr="SOLWALLETADDRESSXYZ">Copy</button></div>
-              <div class="modal-instructions"><p><span class="network">Network: Solana.</span> Send only USDC via Solana (SPL) network to this address to make payment. After payment, send a screenshot of payment proof containing details including the transaction signature to the email below. Sending tokens other than USDC.spl to this address will result in loss of funds.</p></div>
+              <div class="modal-instructions"><p><span class="network">Network: Solana.</span> Send only USDC via Solana (SPL) network to this address to make payment. After payment, send a scree[...]
               <div class="modal-confirm-section">
                 <button class="confirm-payment-btn" data-payment-method="USDC.SOL">Confirm Payment</button>
                 <p style="font-size:13px;color:#666;margin-top:8px;">Click this after you've sent the payment to notify us.</p>
@@ -235,7 +235,7 @@
             Account number: 0123456789<br>
             Routing (ACH): 111000025
           </div>
-          <div style="margin-top:8px;padding:12px;background:#fff;border-radius:8px;border:1px solid #eee;font-size:13px;color:#444">PayPal: payments@example.com<br>Wise: business@example.com<br>Payoneer: business-account@example.com</div>
+          <div style="margin-top:8px;padding:12px;background:#fff;border-radius:8px;border:1px solid #eee;font-size:13px;color:#444">PayPal: payments@example.com<br>Wise: business@example.com<br>[...]
           <p style="margin-top:10px;font-size:13px;color:#666">After payment, forward your receipt email to support@example.com with your order reference.</p>
           <div class="modal-confirm-section">
             <button class="confirm-payment-btn" data-payment-method="Other">Confirm Payment</button>
@@ -318,12 +318,13 @@
     // Make cards clickable
     document.querySelectorAll('.upsell-card').forEach(card => {
       card.addEventListener('click', (e) => {
-        if(e.target.tagName !== 'INPUT'){
-          const checkbox = card.querySelector('.upsell-checkbox');
-          if(checkbox){
-            checkbox.checked = !checkbox.checked;
-            checkbox.dispatchEvent(new Event('change'));
-          }
+        // Get the checkbox within this card
+        const checkbox = card.querySelector('.upsell-checkbox');
+        // Only toggle if clicking on the label or its descendants (but not the checkbox itself)
+        const label = card.querySelector('label');
+        if(label && label.contains(e.target) && e.target !== checkbox){
+          checkbox.checked = !checkbox.checked;
+          checkbox.dispatchEvent(new Event('change'));
         }
       });
     });

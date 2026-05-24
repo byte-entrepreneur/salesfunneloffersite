@@ -315,18 +315,20 @@
       });
     });
 
-    // Make cards clickable
+    // Make cards clickable - rely on native label behavior
     document.querySelectorAll('.upsell-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        // Get the checkbox within this card
-        const checkbox = card.querySelector('.upsell-checkbox');
-        // Only toggle if clicking on the label or its descendants (but not the checkbox itself)
-        const label = card.querySelector('label');
-        if(label && label.contains(e.target) && e.target !== checkbox){
+      const checkbox = card.querySelector('.upsell-checkbox');
+      const label = card.querySelector('label');
+      
+      if(label) {
+        label.addEventListener('click', (e) => {
+          // Prevent double-toggle
+          if(e.target === checkbox) return;
+          e.preventDefault();
           checkbox.checked = !checkbox.checked;
           checkbox.dispatchEvent(new Event('change'));
-        }
-      });
+        });
+      }
     });
 
     function showUpsellModal(){

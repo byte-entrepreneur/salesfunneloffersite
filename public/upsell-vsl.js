@@ -2,7 +2,7 @@
 (function(){
   // Timer configuration (in minutes)
   const OFFER_TIMER_MINUTES = 10; // 10 minutes
-  let currentPrice = 97;
+  let currentPrice = 700000;
   let offerExpired = false;
 
   function init(){
@@ -242,7 +242,7 @@
       if(timeLeft <= 0){
         // Timer expired
         offerExpired = true;
-        currentPrice = 297;
+        currentPrice = 1400000;
         timerDisplay.textContent = '00:00';
         
         // Update UI to show expired state
@@ -252,7 +252,7 @@
         
         // Update button text
         if(acceptBtn){
-          acceptBtn.textContent = '✓ YES! ADD THIS TO MY ORDER FOR $297';
+          acceptBtn.textContent = '✓ YES! ADD THIS TO MY ORDER FOR ₦1,400,000';
         }
 
         clearInterval(timerInterval);

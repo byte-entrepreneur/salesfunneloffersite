@@ -258,7 +258,7 @@
     const backToStep1 = document.getElementById('backToStep1');
 
     let selectedUpsells = [];
-    const basePrice = 49;
+    const basePrice = 25000;
     
     // Handle back to step 1 link
     if(backToStep1){
@@ -273,7 +273,7 @@
       
       // Update base price display
       const basePriceDisplay = document.getElementById('basePriceDisplay');
-      if(basePriceDisplay) basePriceDisplay.textContent = `$${basePrice.toFixed(2)}`;
+      if(basePriceDisplay) basePriceDisplay.textContent = `₦${basePrice.toFixed(2)}`;
       
       selectedUpsells.forEach(upsell => {
         total += parseFloat(upsell.price);

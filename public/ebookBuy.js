@@ -273,22 +273,22 @@
       
       // Update base price display
       const basePriceDisplay = document.getElementById('basePriceDisplay');
-      if(basePriceDisplay) basePriceDisplay.textContent = `₦${basePrice.toFixed(2)}`;
+      if(basePriceDisplay) basePriceDisplay.textContent = `₦${basePrice.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       
       selectedUpsells.forEach(upsell => {
         total += parseFloat(upsell.price);
         summaryHTML += `
           <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:14px;color:#666">
             <span>${upsell.name}</span>
-            <span style="font-weight:600">₦${upsell.price.toFixed(2)}</span>
+            <span style="font-weight:600">₦${parseFloat(upsell.price).toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
           </div>
         `;
       });
       
       if(upsellSummaryItems) upsellSummaryItems.innerHTML = summaryHTML;
-      if(orderTotalEl) orderTotalEl.textContent = `₦${total.toFixed(2)}`;
-      if(btnTotalEl) btnTotalEl.textContent = `₦${total.toFixed(2)}`;
-    }
+      if(orderTotalEl) orderTotalEl.textContent = `₦${total.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      if(btnTotalEl) btnTotalEl.textContent = `₦${total.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+  }
 
     // Handle checkbox changes
     upsellCheckboxes.forEach(checkbox => {

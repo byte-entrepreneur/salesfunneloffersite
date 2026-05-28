@@ -34,14 +34,14 @@
         try {
           // Add VSL upsell to order with current price
           order.vslUpsell = {
-            name: 'Complete YouTube Ads Dominance Course',
+            name: 'Altra Forex Gladiator Bot',
             price: currentPrice
           };
           
           // Track YouTube ads in upsellsSelected array
           if(!order.upsellsSelected) order.upsellsSelected = [];
-          if(!order.upsellsSelected.includes('youtube_ads')){
-            order.upsellsSelected.push('youtube_ads');
+          if(!order.upsellsSelected.includes('forexbot')){
+            order.upsellsSelected.push('forexbot');
           }
           
           // Calculate total
@@ -66,9 +66,9 @@
           // Remove VSL upsell from order if it was added but not paid for
           delete order.vslUpsell;
           
-          // Remove youtube_ads from upsellsSelected if present
+          // Remove forexbot from upsellsSelected if present
           if(order.upsellsSelected){
-            order.upsellsSelected = order.upsellsSelected.filter(u => u !== 'youtube_ads');
+            order.upsellsSelected = order.upsellsSelected.filter(u => u !== 'forexbot');
           }
           
           // Save updated order

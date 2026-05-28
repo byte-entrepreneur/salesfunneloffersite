@@ -4,46 +4,221 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Thank You - Order Confirmed</title>
+
   <link rel="stylesheet" href="styles.css" />
+
   <style>
-    .thank-you-wrapper{max-width:800px;margin:40px auto;padding:40px;background:var(--white);border-radius:16px;box-shadow:0 20px 50px rgba(23,50,11,0.08);text-align:center}
-    .success-icon{font-size:80px;margin-bottom:20px}
-    h1{color:var(--deep-green);margin-bottom:16px}
-    .subtitle{color:#666;font-size:18px;margin-bottom:32px}
-    .order-box{background:#f7fafc;border:2px solid var(--gold);border-radius:12px;padding:24px;margin:24px 0;text-align:left}
-    .order-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #e2e8f0}
-    .order-row:last-child{border-bottom:none;font-weight:700;font-size:18px}
-    .order-item{display:flex;justify-content:space-between;margin-bottom:8px;font-size:15px}
-    .order-header{font-weight:700;margin-bottom:16px;font-size:18px;color:var(--deep-green)}
-    .info-box{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:16px 0;text-align:left}
-    .meta-text{color:#666;font-size:14px;margin:8px 0}
+    .thank-you-wrapper{
+      max-width:900px;
+      margin:40px auto;
+      padding:40px;
+      border-radius:24px;
+      background:#0d0d0d;
+      box-shadow:0 20px 60px rgba(0,0,0,0.4);
+      text-align:center;
+      border:1px solid rgba(255,215,0,0.15);
+    }
+
+    .success-icon{
+      font-size:90px;
+      margin-bottom:20px;
+    }
+
+    h1{
+      color:#fff;
+      font-size:48px;
+      margin-bottom:16px;
+    }
+
+    .subtitle{
+      color:#d4d4d4;
+      font-size:20px;
+      line-height:1.7;
+      max-width:700px;
+      margin:0 auto 32px auto;
+    }
+
+    .hero-box{
+      margin-top:48px;
+      padding:40px;
+      background:linear-gradient(135deg,#000 0%,#161616 100%);
+      border-radius:18px;
+      border:2px solid #d4af37;
+    }
+
+    .hero-box h2{
+      color:#d4af37;
+      font-size:34px;
+      margin-bottom:18px;
+    }
+
+    .hero-box p{
+      color:#fff;
+      font-size:18px;
+      line-height:1.8;
+      margin-bottom:24px;
+    }
+
+    .telegram-box{
+      margin-top:40px;
+      padding:32px;
+      background:#111827;
+      border:2px solid #0088cc;
+      border-radius:18px;
+    }
+
+    .telegram-box h3{
+      color:#fff;
+      font-size:30px;
+      margin-bottom:12px;
+    }
+
+    .telegram-box p{
+      color:#d1d5db;
+      font-size:17px;
+      line-height:1.7;
+      margin-bottom:28px;
+    }
+
+    .telegram-btn{
+      display:inline-block;
+      padding:20px 38px;
+      background:#0088cc;
+      color:#fff;
+      border-radius:14px;
+      font-size:20px;
+      font-weight:700;
+      text-decoration:none;
+      transition:all .25s ease;
+      box-shadow:0 10px 30px rgba(0,136,204,0.35);
+    }
+
+    .telegram-btn:hover{
+      transform:translateY(-2px);
+      opacity:0.95;
+    }
+
+    .hidden{
+      display:none;
+    }
+
+    .meta-text{
+      color:#999;
+      font-size:14px;
+      margin-top:18px;
+    }
+
+    .warning-box{
+      margin-top:22px;
+      padding:18px;
+      background:#2b1d00;
+      border:1px solid rgba(255,215,0,0.25);
+      border-radius:12px;
+      color:#ffe082;
+      font-size:15px;
+      line-height:1.7;
+    }
+
+    @media(max-width:768px){
+      .thank-you-wrapper{
+        padding:28px;
+        margin:20px;
+      }
+
+      h1{
+        font-size:36px;
+      }
+
+      .hero-box h2,
+      .telegram-box h3{
+        font-size:26px;
+      }
+
+      .telegram-btn{
+        width:100%;
+        box-sizing:border-box;
+      }
+    }
   </style>
 </head>
+
 <body>
+
   <div class="container">
+
     <div class="thank-you-wrapper">
+
       <div class="success-icon">🎉</div>
-      <h1 style="color:#fff">Congratulations!</h1>
-      <p class="subtitle" style="color:#fff">You just took the leap that 99% of people are too scared to take.</p>
-      
-      <p style="font-size:18px;color:#fff;line-height:1.8;margin:32px 0;max-width:600px;margin-left:auto;margin-right:auto">
-        While everyone else is still "thinking about it," you're already moving forward. 
-        That's the difference between winners and losers. You made the decision. Now let's get you started
+
+      <h1>Payment Successful</h1>
+
+      <p class="subtitle">
+        You're officially in.
+        Most people hesitate. Most people procrastinate.
+        You took action.
       </p>
 
-      <div style="margin-top:48px;padding:40px;background:linear-gradient(135deg, #000 0%, #1a1a1a 100%);border-radius:12px;border:2px solid var(--gold)">
-        <h2 style="color:var(--gold);margin-bottom:16px;font-size:28px">🚀 Your Templates are Ready</h2>
-        <p style="color:#fff;font-size:18px;margin-bottom:32px">
-          An email containing details of how to access the ebook guide, mentorship, 1-on-1 coaching or even the Forex Gladiator bot (depending on what you paid for) will be sent to you shortly.<br>
-          We're excited to see what you'll build with us.
+      <div class="hero-box">
+
+        <h2>🚀 Your Access Has Been Reserved</h2>
+
+        <p>
+          Your purchase has been confirmed successfully.
+          You’ll receive additional onboarding instructions by email shortly.
         </p>
-        <!-- <a href="https://YOUR-DELIVERY-LINK-HERE.com" target="_blank" style="background:var(--gold);color:#000;padding:20px 48px;border-radius:12px;font-weight:700;text-decoration:none;display:inline-block;box-shadow:0 8px 24px rgba(255,215,0,0.3);font-size:20px">
-          Access Your Course Now →
-        </a> -->
+
+        <p>
+          IMPORTANT:
+          Your private Telegram access link is below.
+          Join immediately to access updates, mentorship, support, resources and future announcements.
+        </p>
+
       </div>
+
+      <!-- TELEGRAM SECTION -->
+      <div id="telegramSection" class="telegram-box hidden">
+
+        <h3>🔐 Join The Private Telegram Channel</h3>
+
+        <p>
+          This is your private buyer access link.
+          It is unique to your purchase.
+        </p>
+
+        <a
+          id="telegramBtn"
+          class="telegram-btn"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          👉 Join Private Telegram
+        </a>
+
+        <div class="warning-box">
+          Please join now and save the group after entering.
+          Your invite link may expire or become unavailable later.
+        </div>
+
+      </div>
+
+      <!-- FALLBACK -->
+      <div id="telegramFallback" class="warning-box hidden" style="margin-top:40px;">
+        Telegram access is still being prepared.
+        Please refresh this page in a few seconds.
+      </div>
+
+      <p class="meta-text">
+        Order Reference:
+        <span id="orderNumber">---</span>
+      </p>
+
     </div>
+
   </div>
 
   <script src="./thankyou-order.js"></script>
+
 </body>
 </html>
+```

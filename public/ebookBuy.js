@@ -355,8 +355,8 @@
         // Track which upsells were selected (use IDs for easier backend processing)
         const upsellsSelected = [];
         selectedUpsells.forEach(upsell => {
-          if(upsell.id === '1') upsellsSelected.push('vsl_course');
-          else if(upsell.id === '2') upsellsSelected.push('offers_course');
+          if(upsell.id === '1') upsellsSelected.push('mentorship');
+          else if(upsell.id === '2') upsellsSelected.push('coaching');
         });
         
         const orderData = {

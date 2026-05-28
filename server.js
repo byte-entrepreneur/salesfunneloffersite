@@ -745,6 +745,27 @@ app.get('/api/paystack-callback', async (req, res) => {
     }
 
     const order = docs.documents[0];
+    let telegramInviteLink = null;
+
+    try {
+      if (!order.telegramInviteLink) {
+        telegramInviteLink = await createTelegramInvite();
+    
+        await databases.updateDocument(
+          ORDERS_DB,
+          ORDERS_COLLECTION,
+          order.$id,
+          {
+            telegramInviteLink,
+            telegramInviteCreatedAt: Date.now()
+          }
+        );
+      } else {
+        telegramInviteLink = order.telegramInviteLink;
+      }
+    } catch (e) {
+      console.warn('Telegram invite creation failed (non-fatal):', e.message || e);
+    }
     console.log('[callback] Order retrieved:', { 
       orderId: order.$id, 
       hasCountdownStartTime: !!order.countdownStartTime,
@@ -959,6 +980,28 @@ app.post('/api/paystack-callback', async (req, res) => {
 
     const order = docs.documents[0];
     console.log('[Callback POST] Found order:', order.$id);
+
+    let telegramInviteLink = null;
+
+    try {
+      if (!order.telegramInviteLink) {
+        telegramInviteLink = await createTelegramInvite();
+    
+        await databases.updateDocument(
+          ORDERS_DB,
+          ORDERS_COLLECTION,
+          order.$id,
+          {
+            telegramInviteLink,
+            telegramInviteCreatedAt: Date.now()
+          }
+        );
+      } else {
+        telegramInviteLink = order.telegramInviteLink;
+      }
+    } catch (e) {
+      console.warn('Telegram invite creation failed (non-fatal):', e.message || e);
+    }
     console.log('[Callback POST] Order countdown data:', { 
       hasCountdownStartTime: !!order.countdownStartTime,
       hasCountdownDuration: !!order.countdownDurationMinutes,
@@ -1068,6 +1111,7 @@ app.post('/api/paystack-callback', async (req, res) => {
       ok: true, 
       orderId: order.$id,
       status: 'Payment confirmed',
+      telegramInviteLink,
       redirectUrl: `${process.env.FRONTEND_BASE_URL}/thankyou-order.html?reference=${reference}`
     });
   } catch (err) {

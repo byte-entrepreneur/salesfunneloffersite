@@ -988,7 +988,7 @@ app.post('/api/paystack-callback', async (req, res) => {
 
     try {
       if (!order.telegramInviteLink) {
-        telegramInviteLink = await createTelegramInvite();
+        telegramInviteLink = await createTelegramInvite(order);
     
         await databases.updateDocument(
           ORDERS_DB,
@@ -1003,7 +1003,7 @@ app.post('/api/paystack-callback', async (req, res) => {
         telegramInviteLink = order.telegramInviteLink;
       }
     } catch (e) {
-      console.warn('Telegram invite creation failed (non-fatal):', e.message || e);
+      console.warn('Telegram invite creation failed:', e.message || e);
     }
     console.log('[Callback POST] Order countdown data:', { 
       hasCountdownStartTime: !!order.countdownStartTime,
@@ -1370,26 +1370,63 @@ async function zohoAPIUpdate(databases, userData, listKey, source) {
 
 // --- Telegram Invite Link Helper ---
 // Duration in days for the Telegram invite to expire. Edit value as needed.
-const TELEGRAM_INVITE_EXPIRE_DAYS = parseInt(process.env.TELEGRAM_INVITE_EXPIRE_DAYS, 10) || 7;
+async function createTelegramInvite(order) {
+  const chatId = getTelegramGroupIdFromOffer(order);
 
-// Create a one-time Telegram invite link for the customer after successful payment
-async function createTelegramInvite() {
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  if (!chatId || !botToken) throw new Error('TELEGRAM_CHAT_ID or TELEGRAM_BOT_TOKEN missing in environment');
-  const res = await fetch(`https://api.telegram.org/bot${botToken}/createChatInviteLink`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      chat_id: chatId,
-      member_limit: 1, // only 1 user can join with this link (prevents share abuse)
-      expire_date: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * TELEGRAM_INVITE_EXPIRE_DAYS) // expires after X days
-    })
-  });
+  const res = await fetch(
+    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/createChatInviteLink`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        member_limit: 1,
+        expire_date: Math.floor(Date.now() / 1000) + 60 * 60 * 168 // 7-days expiry
+      })
+    }
+  );
 
   const data = await res.json();
+
   if (!data.ok) {
-    throw new Error(`Telegram API error: ${JSON.stringify(data)}`);
+    throw new Error(data.description);
   }
+
   return data.result.invite_link;
+}
+
+function getTelegramGroupIdFromOffer(order) {
+  const upsells = order.upsellsSelected || [];
+
+  const hasMentorship = upsells.includes('mentorship');
+  const hasCoaching = upsells.includes('coaching');
+  const hasBot = upsells.includes('forexbot');
+
+  // BASE ONLY (no upsells)
+  if (upsells.length === 0) {
+    return process.env.TELEGRAM_GROUP_EBOOK_ONLY;
+  }
+
+  // Mentorship paths
+  if (hasMentorship && hasBot) {
+    return process.env.TELEGRAM_GROUP_MENTORSHIP_AND_BOT;
+  }
+
+  // Coaching paths
+  if (hasCoaching && hasBot) {
+    return process.env.TELEGRAM_GROUP_COACHING_AND_BOT;
+  }
+
+  // fallback: mentorship only
+  if (hasMentorship) {
+    return process.env.TELEGRAM_GROUP_MENTORSHIP;
+  }
+
+  // fallback: coaching only
+  if (hasCoaching) {
+    return process.env.TELEGRAM_GROUP_COACHING;
+  }
+
+  // safety fallback
+  return process.env.TELEGRAM_GROUP_EBOOK_ONLY;
 }

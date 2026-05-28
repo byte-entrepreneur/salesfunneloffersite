@@ -9,24 +9,67 @@
     
     // --- Telegram invite link integration ---
     const telegramLink = params.get('telegram');
-    if(telegramLink) {
-      const btn = document.createElement('a');
-      btn.href = telegramLink;
-      btn.target = '_blank';
-      btn.textContent = '👉 Join Your Private Telegram Access';
-      btn.style = `
-        display:inline-block;
-        margin-top:20px;
-        padding:16px 24px;
-        background:#0088cc;
-        color:white;
-        border-radius:10px;
-        font-weight:600;
-        text-decoration:none;
-      `;
-      document.querySelector('.thank-you-wrapper').appendChild(btn);
+    
+    if (telegramLink) {
+    const wrapper = document.querySelector('.thank-you-wrapper');
+    
+    if (wrapper) {
+    const telegramContainer = document.createElement('div');
+    
+    ```
+    telegramContainer.innerHTML = `
+      <div style="
+        margin-top:30px;
+        padding:24px;
+        border-radius:16px;
+        background:#0f172a;
+        text-align:center;
+      ">
+        <h3 style="
+          margin-bottom:12px;
+          color:#fff;
+          font-size:24px;
+        ">
+          🎉 Your Private Access Is Ready
+        </h3>
+    
+        <p style="
+          color:#cbd5e1;
+          margin-bottom:20px;
+          line-height:1.6;
+        ">
+          Click below to join your private Telegram channel.
+          This invite link only works for one person.
+        </p>
+    
+        <a
+          href="${telegramLink}"
+          target="_blank"
+          rel="noopener noreferrer"
+          style="
+            display:inline-block;
+            padding:18px 28px;
+            background:#0088cc;
+            color:white;
+            border-radius:12px;
+            font-weight:700;
+            text-decoration:none;
+            font-size:18px;
+            transition:0.2s ease;
+          "
+        >
+          👉 Join Private Telegram
+        </a>
+      </div>
+    `;
+    
+    wrapper.appendChild(telegramContainer);
+    ```
+    
     }
-    // --- end ---
+    }
+    // --- end telegram integration ---
+
     
     // Try to get order data from sessionStorage
     let orderData = sessionStorage.getItem('orderData');

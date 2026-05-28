@@ -431,13 +431,13 @@
     });
 
     // Show the Buy Now button after a configurable reveal delay (in minutes)
-  const minutesDelay = 31.36; // change this value to control when the buy area appears
+  const minutesDelay = 0.5 //31.36; // change this value to control when the buy area appears
     const ms = minutesDelay * 60 * 1000;
 
     // debug badge removed - no on-page debug element in production
 
     // Expiry length for the offer countdown (in minutes). Adjust as needed.
-    const expiryMinutes = 15; //30; // default 30 minutes (change to 60 for 60 minutes)
+    const expiryMinutes = 20; //30; // default 30 minutes (change to 60 for 60 minutes)
 
     // Make sure button and related texts appear after reveal timeout
     // Defensive: if ms is not a finite number, fall back to 30000ms

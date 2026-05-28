@@ -185,9 +185,9 @@ function getZohoSegmentationList(upsellsSelected) {
     upsells = upsellsSelected;
   }
   
-  const hasVSL = upsells.includes('vsl_course');
-  const hasOffers = upsells.includes('offers_course');
-  const hasYouTube = upsells.includes('youtube_ads');
+  const hasVSL = upsells.includes('mentorship');
+  const hasOffers = upsells.includes('coaching');
+  const hasYouTube = upsells.includes('forexbot');
   const count = upsells.length;
   
   // NO UPSELLS - Core only

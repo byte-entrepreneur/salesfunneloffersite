@@ -749,7 +749,7 @@ app.get('/api/paystack-callback', async (req, res) => {
 
     try {
       if (!order.telegramInviteLink) {
-        telegramInviteLink = await createTelegramInvite();
+        telegramInviteLink = await createTelegramInvite(order);
     
         await databases.updateDocument(
           ORDERS_DB,

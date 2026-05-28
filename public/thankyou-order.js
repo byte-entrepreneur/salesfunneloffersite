@@ -7,6 +7,27 @@
     const params = new URLSearchParams(window.location.search);
     const reference = params.get('reference');
     
+    // --- Telegram invite link integration ---
+    const telegramLink = params.get('telegram');
+    if(telegramLink) {
+      const btn = document.createElement('a');
+      btn.href = telegramLink;
+      btn.target = '_blank';
+      btn.textContent = '👉 Join Your Private Telegram Access';
+      btn.style = `
+        display:inline-block;
+        margin-top:20px;
+        padding:16px 24px;
+        background:#0088cc;
+        color:white;
+        border-radius:10px;
+        font-weight:600;
+        text-decoration:none;
+      `;
+      document.querySelector('.thank-you-wrapper').appendChild(btn);
+    }
+    // --- end ---
+    
     // Try to get order data from sessionStorage
     let orderData = sessionStorage.getItem('orderData');
     

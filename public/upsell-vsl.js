@@ -186,7 +186,7 @@
             console.warn('Failed to update order reference:', e);
           });
           // Redirect to thank you page
-          window.location.href = '/thankyou-order.html?reference=' + response.reference;
+          window.location.href = '/api/paystack-callback?reference=' + encodeURIComponent(response.reference);
         }
       });
 

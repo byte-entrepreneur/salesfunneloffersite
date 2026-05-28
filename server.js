@@ -893,6 +893,9 @@ app.get('/api/paystack-callback', async (req, res) => {
     if (order.name) thankUrl.searchParams.set('name', order.name);
     if (order.email) thankUrl.searchParams.set('email', order.email);
     if (reference) thankUrl.searchParams.set('reference', reference);
+    if (telegramInviteLink) {
+      thankUrl.searchParams.set('telegram', telegramInviteLink);
+      }
 
     return res.redirect(thankUrl.toString());
   } catch (err) {

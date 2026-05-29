@@ -136,14 +136,10 @@
       }
   
       if (!data.authorization_url) {
-        throw new Error('Paystack authorization URL was not returned');
+        throw new Error('No Paystack checkout URL returned from server');
       }
   
-      console.log('Redirecting to Paystack hosted checkout:', data.authorization_url);
-  
-      // IMPORTANT:
-      // This sends the buyer to Paystack's full hosted checkout page,
-      // where they can choose Card, Transfer, Bank, USSD, OPay, etc.
+      // Send buyer to Paystack hosted checkout with multiple payment options
       window.location.href = data.authorization_url;
   
     } catch(err){

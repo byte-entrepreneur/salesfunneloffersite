@@ -1,7 +1,7 @@
 // VSL Upsell Page Logic
 (function(){
   // Timer configuration (in minutes)
-  const OFFER_TIMER_MINUTES = 10; // 10 minutes
+  const OFFER_TIMER_MINUTES = 13; // 10 minutes
   let currentPrice = 700000;
   let offerExpired = false;
 

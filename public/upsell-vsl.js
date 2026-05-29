@@ -111,17 +111,8 @@
     const name = params.get('name') || order.name || '';
     const email = params.get('email') || order.email || '';
     const phone = params.get('phone') || order.phone || '';
-
+  
     try {
-      // First, get the public key
-      const publicKey = await getPaystackPublicKey();
-      console.log('Paystack public key:', publicKey);
-      
-      if (!publicKey || !publicKey.startsWith('pk_')) {
-        throw new Error('Invalid Paystack public key: ' + publicKey);
-      }
-
-      // Create the payment reference with backend
       const resp = await fetch('/api/initiate-payment', {
         method: 'POST',
         credentials: 'include',
@@ -132,66 +123,29 @@
           phone, 
           amount: amount,
           orderData: order,
-          upsellsSelected: order.upsellsSelected || [], // Pass upsells array to backend
-          countdownStartTime: order.countdownStartTime, // From ebookBuy.js countdown
-          countdownDurationMinutes: order.countdownDurationMinutes // From ebookBuy.js countdown
+          upsellsSelected: order.upsellsSelected || [],
+          countdownStartTime: order.countdownStartTime,
+          countdownDurationMinutes: order.countdownDurationMinutes
         })
       });
-
+  
       const data = await resp.json();
-      if(!resp.ok) throw new Error(data.error || JSON.stringify(data));
-
-      console.log('Payment reference:', data.reference);
-
-      // Use Paystack inline popup instead of redirect
-      const handler = PaystackPop.setup({
-        key: publicKey,
-        email: email,
-        amount: Math.round(amount * 100), // amount in kobo
-        reference: data.reference, // Use 'reference' not 'ref'
-        metadata: {
-          custom_fields: [
-            {
-              display_name: "Customer Name",
-              variable_name: "customer_name",
-              value: name
-            }
-          ]
-        },
-        onClose: function(){
-          console.log('Payment modal closed');
-          // If payment wasn't completed, remove VSL upsell from order
-          const currentOrder = JSON.parse(sessionStorage.getItem('orderData') || '{}');
-          if(currentOrder.vslUpsell){
-            delete currentOrder.vslUpsell;
-            if(currentOrder.upsellsSelected){
-              currentOrder.upsellsSelected = currentOrder.upsellsSelected.filter(function(u) { return u !== 'youtube_ads'; });
-            }
-            sessionStorage.setItem('orderData', JSON.stringify(currentOrder));
-            console.log('VSL upsell removed from order (payment not completed)');
-          }
-        },
-        callback: function(response){
-          console.log('Payment successful:', response);
-          // Update the order with the actual Paystack reference (fire and forget)
-          fetch('/api/update-order-reference', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              initReference: data.reference,
-              actualReference: response.reference
-            })
-          }).catch(function(e) {
-            console.warn('Failed to update order reference:', e);
-          });
-          // Redirect to thank you page
-          window.location.href = '/api/paystack-callback?reference=' + encodeURIComponent(response.reference);
-        }
-      });
-
-      handler.openIframe();
-      
+  
+      if (!resp.ok) {
+        throw new Error(data.error || JSON.stringify(data));
+      }
+  
+      if (!data.authorization_url) {
+        throw new Error('Paystack authorization URL was not returned');
+      }
+  
+      console.log('Redirecting to Paystack hosted checkout:', data.authorization_url);
+  
+      // IMPORTANT:
+      // This sends the buyer to Paystack's full hosted checkout page,
+      // where they can choose Card, Transfer, Bank, USSD, OPay, etc.
+      window.location.href = data.authorization_url;
+  
     } catch(err){
       console.error('[upsell-vsl] Payment error:', err);
       alert('Unable to process payment. Please try again. Error: ' + err.message);

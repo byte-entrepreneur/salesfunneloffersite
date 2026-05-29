@@ -431,7 +431,7 @@
     });
 
     // Show the Buy Now button after a configurable reveal delay (in minutes)
-  const minutesDelay = 0.2 //31.36; // change this value to control when the buy area appears
+  const minutesDelay = 0.01 //31.36; // change this value to control when the buy area appears
     const ms = minutesDelay * 60 * 1000;
 
     // debug badge removed - no on-page debug element in production

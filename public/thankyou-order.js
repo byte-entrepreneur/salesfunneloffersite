@@ -11,64 +11,26 @@
     const telegramLink = params.get('telegram');
     
     if (telegramLink) {
-    const wrapper = document.querySelector('.thank-you-wrapper');
+      const telegramSection = document.getElementById('telegramSection');
+      const telegramBtn = document.getElementById('telegramBtn');
+      const telegramFallback = document.getElementById('telegramFallback');
     
-    if (wrapper) {
-    const telegramContainer = document.createElement('div');
+      if (telegramSection && telegramBtn) {
+        telegramBtn.href = telegramLink;
+        telegramSection.classList.remove('hidden');
     
-    ```
-    telegramContainer.innerHTML = `
-      <div style="
-        margin-top:30px;
-        padding:24px;
-        border-radius:16px;
-        background:#0f172a;
-        text-align:center;
-      ">
-        <h3 style="
-          margin-bottom:12px;
-          color:#fff;
-          font-size:24px;
-        ">
-          🎉 Your Private Access Is Ready
-        </h3>
+        if (telegramFallback) {
+          telegramFallback.classList.add('hidden');
+        }
+      }
+    } else {
+      const telegramFallback = document.getElementById('telegramFallback');
     
-        <p style="
-          color:#cbd5e1;
-          margin-bottom:20px;
-          line-height:1.6;
-        ">
-          Click below to join your private Telegram channel.
-          This invite link only works for one person.
-        </p>
-    
-        <a
-          href="${telegramLink}"
-          target="_blank"
-          rel="noopener noreferrer"
-          style="
-            display:inline-block;
-            padding:18px 28px;
-            background:#0088cc;
-            color:white;
-            border-radius:12px;
-            font-weight:700;
-            text-decoration:none;
-            font-size:18px;
-            transition:0.2s ease;
-          "
-        >
-          👉 Join Private Telegram
-        </a>
-      </div>
-    `;
-    
-    wrapper.appendChild(telegramContainer);
-    ```
-    
+      if (telegramFallback) {
+        telegramFallback.classList.remove('hidden');
+      }
     }
-    }
-    // --- end telegram integration ---
+    // --- end telegram invite link integration ---
 
     
     // Try to get order data from sessionStorage

@@ -51,7 +51,7 @@
           sessionStorage.setItem('orderData', JSON.stringify(order));
           
           // Initiate payment with Paystack inline modal
-          await initiatePaymentInline(order, total);
+          await initiatePaystackCheckout(order, total);
           
         } catch(err){
           console.error('[upsell-vsl] Error:', err);
@@ -78,7 +78,7 @@
           const total = calculateTotal(order);
           
           // Initiate payment with Paystack inline modal
-          await initiatePaymentInline(order, total);
+          await initiatePaystackCheckout(order, total);
           
         } catch(err){
           console.error('[upsell-vsl] Error:', err);
@@ -106,7 +106,7 @@
     return total;
   }
 
-  async function initiatePaymentInline(order, amount){
+  async function initiatePaystackCheckout(order, amount){
     const params = new URLSearchParams(window.location.search);
     const name = params.get('name') || order.name || '';
     const email = params.get('email') || order.email || '';
@@ -122,6 +122,7 @@
           email, 
           phone, 
           amount: amount,
+          paymentMode: 'multiple', // or 'cardOnly paymentMode: 'multiple', // or 'cardOnly
           orderData: order,
           upsellsSelected: order.upsellsSelected || [],
           countdownStartTime: order.countdownStartTime,

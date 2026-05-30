@@ -238,8 +238,12 @@ function isValidEmail(email) {
 app.post('/api/initiate-payment', async (req, res) => {
   try {
     console.log('/api/initiate-payment incoming body:', req.body);
+    const PAYMENT_CHANNELS = {
+      cardOnly: ['card'],
+      multiple: ['card', 'bank', 'ussd', 'bank_transfer']
+    };
     // accept only name/email/phone from the frontend; city/state/amount are optional
-  const { name, email, phone } = req.body || {};
+  const { name, email, phone,  paymentMode = 'multiple' } = req.body || {};
     const city = req.body && req.body.city ? req.body.city : '';
     const state = req.body && req.body.state ? req.body.state : '';
     // amount may be omitted by the client; use a DEFAULT_PRICE env var or fallback to 49
@@ -287,6 +291,7 @@ app.post('/api/initiate-payment', async (req, res) => {
       email,
       amount: Math.round(Number(amount) * 100),
       callback_url: process.env.PAYSTACK_CALLBACK_URL,
+      channels: PAYMENT_CHANNELS[paymentMode] || PAYMENT_CHANNELS.multiple
       metadata: {
         name,
         phone,

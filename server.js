@@ -291,7 +291,7 @@ app.post('/api/initiate-payment', async (req, res) => {
       email,
       amount: Math.round(Number(amount) * 100),
       callback_url: process.env.PAYSTACK_CALLBACK_URL,
-      channels: PAYMENT_CHANNELS[paymentMode] || PAYMENT_CHANNELS.multiple
+      channels: PAYMENT_CHANNELS[paymentMode] || PAYMENT_CHANNELS.multiple,
       metadata: {
         name,
         phone,

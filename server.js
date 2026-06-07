@@ -224,7 +224,7 @@ function getZohoSegmentationList(upsellsSelected) {
 const ORDERS_DB = process.env.ORDERS_DATABASE_ID || 'ordersDB';
 const ORDERS_COLLECTION = process.env.ORDERS_COLLECTION_ID;
 const SIGNUPS_DB = process.env.SIGNUPS_DATABASE_ID || 'sign_ups';
-const SIGNUPS_COLLECTION = process.env.SIGNUPS_COLLECTION_ID;
+const SIGNUPS_COLLECTION = process.env.SIGNUPS_COLLECTION_ID || process.env.APPWRITE_SIGNUPS_COLLECTION_ID;
 
 // POST /api/initiate-payment
 // simple email validator (basic, permissive)
@@ -1288,19 +1288,96 @@ app.post('/api/zoho-reprocess-order', async (req, res) => {
   }
 });
 
+// Admin endpoint: re-run Zoho sync for landing-page signups already saved in Appwrite.
+app.post('/api/zoho-reprocess-signups', async (req, res) => {
+  try {
+    const expectedSecret = process.env.ADMIN_SYNC_SECRET;
+    const providedSecret = req.get('x-admin-sync-secret') || req.body?.adminSyncSecret;
+    if (expectedSecret && providedSecret !== expectedSecret) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    if (!expectedSecret) {
+      console.warn('ADMIN_SYNC_SECRET is not configured; /api/zoho-reprocess-signups is unprotected');
+    }
+
+    const listKey = process.env.MAIN_LIST_KEY;
+    if (!listKey) return res.status(500).json({ error: 'MAIN_LIST_KEY is not configured' });
+    if (!SIGNUPS_COLLECTION) return res.status(500).json({ error: 'SIGNUPS_COLLECTION_ID is not configured' });
+
+    const limit = Math.min(Math.max(Number(req.body?.limit || 100), 1), 100);
+    const includeSynced = Boolean(req.body?.includeSynced);
+    const dryRun = Boolean(req.body?.dryRun);
+    const email = req.body?.email;
+    const queries = [Query.limit(limit)];
+    if (email) queries.push(Query.equal('email', email));
+
+    const docs = await databases.listDocuments(SIGNUPS_DB, SIGNUPS_COLLECTION, queries);
+    const results = [];
+
+    for (const signup of docs.documents || []) {
+      const alreadySynced = signup.zohoSubscribedListKey === listKey;
+      if (alreadySynced && !includeSynced) {
+        results.push({ signupId: signup.$id, email: signup.email, skipped: true, reason: 'already_synced' });
+        continue;
+      }
+
+      if (!signup.email) {
+        results.push({ signupId: signup.$id, skipped: true, reason: 'missing_email' });
+        continue;
+      }
+
+      if (dryRun) {
+        results.push({ signupId: signup.$id, email: signup.email, skipped: true, reason: 'dry_run' });
+        continue;
+      }
+
+      try {
+        const zohoRes = await zohoAPIUpdate(databases, signup, listKey, 'Landing signup reprocess');
+        if (zohoRes && zohoRes.ok) {
+          await databases.updateDocument(SIGNUPS_DB, SIGNUPS_COLLECTION, signup.$id, {
+            zohoSubscribedAt: Date.now(),
+            zohoSubscribedListKey: listKey
+          });
+        }
+        results.push({ signupId: signup.$id, email: signup.email, zohoRes });
+      } catch (err) {
+        results.push({
+          signupId: signup.$id,
+          email: signup.email,
+          ok: false,
+          error: String(err.message || err)
+        });
+      }
+    }
+
+    return res.json({
+      ok: true,
+      matched: docs.total,
+      processed: results.length,
+      results
+    });
+  } catch (err) {
+    console.error('zoho-reprocess-signups error', err);
+    return res.status(500).json({ error: String(err.message || err) });
+  }
+});
+
 
 // Zoho contact sync helper
 async function zohoAPIUpdate(databases, userData, listKey, source) {
+  if (!listKey) throw new Error('Zoho list key is not configured');
+
   // 1. Get OAuth token from util
   const access_token = await getValidZohoToken(databases);
 
+  const fullName = userData.name || userData.fullName || userData.email || '';
   const contactInfo = {
-    'First Name': userData.name.split(' ')[0],
-    'Last Name': userData.name.split(' ').slice(1).join(' ') || '',
+    'First Name': fullName.split(' ')[0],
+    'Last Name': fullName.split(' ').slice(1).join(' ') || '',
     'Contact Email': userData.email,
-    'Phone': userData.phone,
-    'City': userData.city,
-    'State': userData.state
+    'Phone': userData.phone || '',
+    'City': userData.city || '',
+    'State': userData.state || ''
   };
 
   const params = new URLSearchParams();
@@ -1356,9 +1433,15 @@ async function zohoAPIUpdate(databases, userData, listKey, source) {
   }
 
   // If Zoho responded OK but includes a message indicating throttling, honor it too
-  if (parsed && parsed.code === '2708') {
+  if (findZohoCode(parsed, '2708')) {
     console.warn(`zohoAPIUpdate: Zoho returned code 2708 in success body (throttling).`);
     return { skipped: true, reason: 'zoho_2708' };
+  }
+
+  const zohoError = getZohoError(parsed);
+  if (zohoError) {
+    console.error('Zoho API returned an error payload:', zohoError);
+    throw new Error(`Zoho update failed: ${JSON.stringify(zohoError)}`);
   }
 
   console.log('Zoho API response:', text);
@@ -1371,6 +1454,31 @@ async function zohoAPIUpdate(databases, userData, listKey, source) {
     console.warn('zohoAPIUpdate: unable to persist daily quota (non-fatal):', e.message || e);
   }
   return { ok: true, result: parsed || text };
+}
+
+function findZohoCode(value, code) {
+  if (!value || typeof value !== 'object') return false;
+  if (String(value.code) === String(code)) return true;
+  return Object.values(value).some((entry) => findZohoCode(entry, code));
+}
+
+function getZohoError(value) {
+  if (!value || typeof value !== 'object') return null;
+
+  const status = typeof value.status === 'string' ? value.status.toLowerCase() : null;
+  if (status === 'error' || value.error) {
+    return {
+      code: value.code == null ? null : String(value.code),
+      status: value.status,
+      message: value.message || value.error || value.details || 'Zoho returned an error'
+    };
+  }
+
+  for (const entry of Object.values(value)) {
+    const nested = getZohoError(entry);
+    if (nested) return nested;
+  }
+  return null;
 }
 
 // --- Telegram Invite Link Helper ---

@@ -1432,6 +1432,10 @@ async function zohoAPIUpdate(databases, userData, listKey, source) {
     throw new Error(`Zoho update failed: ${text}`);
   }
 
+  if (!text || !text.trim()) {
+    throw new Error(`Zoho update returned an empty response with HTTP ${response.status}`);
+  }
+
   // If Zoho responded OK but includes a message indicating throttling, honor it too
   if (findZohoCode(parsed, '2708')) {
     console.warn(`zohoAPIUpdate: Zoho returned code 2708 in success body (throttling).`);
@@ -1453,7 +1457,7 @@ async function zohoAPIUpdate(databases, userData, listKey, source) {
   } catch (e) {
     console.warn('zohoAPIUpdate: unable to persist daily quota (non-fatal):', e.message || e);
   }
-  return { ok: true, result: parsed || text };
+  return { ok: true, httpStatus: response.status, result: parsed || text };
 }
 
 function findZohoCode(value, code) {

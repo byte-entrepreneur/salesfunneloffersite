@@ -1397,7 +1397,8 @@ async function zohoAPIUpdate(databases, userData, listKey, source) {
 
   // per-email cooldown removed: always attempt Zoho call unless daily quota exceeded
 
-  const response = await fetch('https://campaigns.zoho.com/api/v1.1/json/listsubscribe', {
+  const zohoApiDomain = process.env.ZOHO_API_DOMAIN || 'https://campaigns.zoho.com';
+  const response = await fetch(`${zohoApiDomain}/api/v1.1/json/listsubscribe`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',

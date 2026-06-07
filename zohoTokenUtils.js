@@ -1,9 +1,16 @@
 import fetch from "node-fetch";
 
+let cachedEnvToken = null;
+
 export async function getValidZohoToken(databases) {
   // If a refresh token is present in environment, use it first (avoids Appwrite dependency)
   if (process.env.ZOHO_REFRESH_TOKEN) {
-    const response = await fetch("https://accounts.zoho.com/oauth/v2/token", {
+    if (cachedEnvToken && cachedEnvToken.expiresAt > Date.now() + 60000) {
+      return cachedEnvToken.accessToken;
+    }
+
+    const accountsDomain = process.env.ZOHO_ACCOUNTS_DOMAIN || "https://accounts.zoho.com";
+    const response = await fetch(`${accountsDomain}/oauth/v2/token`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
@@ -15,10 +22,15 @@ export async function getValidZohoToken(databases) {
     });
 
     const result = await response.json();
-    if (!result.access_token) throw new Error("Failed to refresh Zoho token using ZOHO_REFRESH_TOKEN from env");
+    if (!result.access_token) {
+      throw new Error(`Failed to refresh Zoho token using ZOHO_REFRESH_TOKEN from env: ${JSON.stringify(result)}`);
+    }
 
-    // We don't persist to Appwrite in this fallback path
-    return result.access_token;
+    cachedEnvToken = {
+      accessToken: result.access_token,
+      expiresAt: Date.now() + Number(result.expires_in || 3600) * 1000,
+    };
+    return cachedEnvToken.accessToken;
   }
   // Try to read token from Appwrite if available (fallback)
   try {
@@ -33,7 +45,8 @@ export async function getValidZohoToken(databases) {
 
       // Refresh using stored refresh_token if present
       if (tokenData.refresh_token) {
-        const response = await fetch("https://accounts.zoho.com/oauth/v2/token", {
+        const accountsDomain = process.env.ZOHO_ACCOUNTS_DOMAIN || "https://accounts.zoho.com";
+        const response = await fetch(`${accountsDomain}/oauth/v2/token`, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: new URLSearchParams({
@@ -45,7 +58,9 @@ export async function getValidZohoToken(databases) {
         });
 
         const result = await response.json();
-        if (!result.access_token) throw new Error("Failed to refresh Zoho token from Appwrite-stored refresh_token");
+        if (!result.access_token) {
+          throw new Error(`Failed to refresh Zoho token from Appwrite-stored refresh_token: ${JSON.stringify(result)}`);
+        }
 
         // Save new token back to Appwrite if we have an id
         try {

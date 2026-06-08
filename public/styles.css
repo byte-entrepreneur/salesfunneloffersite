@@ -1380,6 +1380,50 @@ button[type="submit"]:hover{transform:translateY(-1px)}
   border-color: var(--tech-line) !important;
 }
 
+.tech-luxe-page #upsellModal > div {
+  background: linear-gradient(145deg, rgba(14, 20, 18, 0.98), rgba(7, 10, 9, 0.98)) !important;
+  border: 1px solid var(--tech-line) !important;
+  color: var(--tech-ink) !important;
+  box-shadow: 0 34px 100px rgba(0, 0, 0, 0.62) !important;
+}
+
+.tech-luxe-page #upsellModal h2,
+.tech-luxe-page #upsellModal h3,
+.tech-luxe-page #upsellModal label,
+.tech-luxe-page #upsellModal span,
+.tech-luxe-page #upsellModal div {
+  color: var(--tech-ink) !important;
+}
+
+.tech-luxe-page #upsellModal h2 {
+  color: var(--tech-gold-bright) !important;
+}
+
+.tech-luxe-page #upsellModal p,
+.tech-luxe-page #upsellModal li {
+  color: var(--tech-muted) !important;
+}
+
+.tech-luxe-page #upsellModal .upsell-card h3,
+.tech-luxe-page #upsellModal #orderTotal,
+.tech-luxe-page #upsellModal #btnTotal {
+  color: #fff7df !important;
+}
+
+.tech-luxe-page #upsellModal [style*="background:#f7fafc"] {
+  background: rgba(255, 255, 255, 0.055) !important;
+  border: 1px solid var(--tech-line) !important;
+}
+
+.tech-luxe-page #upsellModal [style*="border-top:2px solid #e2e8f0"] {
+  border-top-color: rgba(231, 189, 99, 0.34) !important;
+}
+
+.tech-luxe-page #backToStep1,
+.tech-luxe-page #upsellModal .upsell-card span[style*="line-through"] {
+  color: var(--tech-gold-bright) !important;
+}
+
 .tech-luxe-page .contact-email,
 .tech-luxe-page .email-help,
 .tech-luxe-page .email-warning,

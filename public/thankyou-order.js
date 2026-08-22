@@ -122,7 +122,7 @@
       // Total
       const totalEl = document.getElementById('totalPaid');
       if(totalEl){
-        totalEl.textContent = '$' + formatUSD(total);
+        totalEl.textContent = '₦' + Number(total).toLocaleString('en-NG');
       }
     }
   }
@@ -155,7 +155,7 @@
     
     const totalEl = document.getElementById('totalPaid');
     if(totalEl){
-      totalEl.textContent = '$49.00';
+      totalEl.textContent = '₦25,000';
     }
   }
 

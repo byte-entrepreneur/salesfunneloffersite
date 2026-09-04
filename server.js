@@ -54,11 +54,27 @@ app.use(express.static(publicDir));
 // serve landing page at root for convenience
 app.get('/', (req, res) => {
   try {
-    return res.sendFile(path.join(publicDir, 'ebookLandingPage.html'));
+    return res.sendFile(path.join(publicDir, 'index.html'));
   } catch (err) {
     return res.status(500).send('Unable to load landing page');
   }
 });
+
+// StoreLaunch orders use their own delivery page while legacy trading orders
+// continue to use the original thank-you flow.
+function isStoreLaunchOrder(order) {
+  if (!order || !order.orderDetails) return false;
+  try {
+    const details = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
+    return details && details.product === '100m_online_stores';
+  } catch (e) {
+    return false;
+  }
+}
+
+function getThankYouPath(order) {
+  return isStoreLaunchOrder(order) ? '/store-launch-thankyou.html' : '/thankyou-order.html';
+}
 
 // Temporary debug route to inspect public directory
 import fs from 'fs';
@@ -894,7 +910,7 @@ app.get('/api/paystack-callback', async (req, res) => {
 
     // Redirect buyer to thank you page with name/email and reference
     const frontendBase = process.env.FRONTEND_BASE_URL || '';
-    const thankUrl = new URL(frontendBase + '/thankyou-order.html', 'http://localhost');
+    const thankUrl = new URL(frontendBase + getThankYouPath(order), 'http://localhost');
     if (order.name) thankUrl.searchParams.set('name', order.name);
     if (order.email) thankUrl.searchParams.set('email', order.email);
     if (reference) thankUrl.searchParams.set('reference', reference);
@@ -1120,7 +1136,7 @@ app.post('/api/paystack-callback', async (req, res) => {
       orderId: order.$id,
       status: 'Payment confirmed',
       telegramInviteLink,
-      redirectUrl: `${process.env.FRONTEND_BASE_URL}/thankyou-order.html?reference=${reference}`
+      redirectUrl: `${process.env.FRONTEND_BASE_URL || ''}${getThankYouPath(order)}?reference=${reference}`
     });
   } catch (err) {
     console.error('[Callback POST] Error:', err);

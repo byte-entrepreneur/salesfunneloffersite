@@ -97,7 +97,12 @@
     dfyStatus.textContent = 'Sending your request…';
     submit.disabled = true;
     try {
-      await jsonPost('/api/subscribe', { ...payload, pageEnterAt: Date.now(), offer: 'dfy', product: '100m_online_stores' });
+      await jsonPost('/api/subscribe', {
+        ...payload,
+        pageEnterAt: Date.now(),
+        offer: 'dfy',
+        productCode: '100m_online_stores',
+      });
       modalDfy.hidden = true;
       modalSuccess.hidden = false;
       document.getElementById('successCopy').textContent = 'Request received. We will contact you on WhatsApp or email to confirm fit and timing.';

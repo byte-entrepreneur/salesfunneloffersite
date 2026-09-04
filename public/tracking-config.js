@@ -3,6 +3,6 @@ window.STORE_TRACKING_CONFIG = {
   googleTagId: "",
   googleAdsConversionId: "",
   googleAdsConversionLabel: "",
-  productName: "Trading Bot Mafia Automation Bundle",
+  productName: window.STORE_PRODUCT_NAME || "Trading Bot Mafia Automation Bundle",
   currency: "NGN"
 };

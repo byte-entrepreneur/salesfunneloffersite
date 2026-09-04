@@ -935,6 +935,7 @@ app.get('/api/paystack-callback', async (req, res) => {
     if (order.name) thankUrl.searchParams.set('name', order.name);
     if (order.email) thankUrl.searchParams.set('email', order.email);
     if (reference) thankUrl.searchParams.set('reference', reference);
+    if (order.amount) thankUrl.searchParams.set('amount', String(order.amount));
     if (telegramInviteLink) {
       thankUrl.searchParams.set('telegram', telegramInviteLink);
       }
@@ -1157,7 +1158,7 @@ app.post('/api/paystack-callback', async (req, res) => {
       orderId: order.$id,
       status: 'Payment confirmed',
       telegramInviteLink,
-      redirectUrl: `${process.env.FRONTEND_BASE_URL || ''}${getThankYouPath(order)}?reference=${reference}`
+      redirectUrl: `${process.env.FRONTEND_BASE_URL || ''}${getThankYouPath(order)}?reference=${reference}${order.amount ? `&amount=${encodeURIComponent(order.amount)}` : ''}`
     });
   } catch (err) {
     console.error('[Callback POST] Error:', err);

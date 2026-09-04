@@ -33,7 +33,13 @@
     window.setTimeout(() => firstInput?.focus(), 50);
   };
 
-  document.querySelectorAll('[data-open-offer], [data-buy-diy]').forEach((button) => {
+  document.querySelectorAll('[data-open-offer]').forEach((button) => {
+    button.addEventListener('click', () => {
+      hide(briefingModal);
+      document.getElementById('offer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+  document.querySelectorAll('[data-buy-diy]').forEach((button) => {
     button.addEventListener('click', () => openCheckout('diy'));
   });
   document.querySelectorAll('[data-apply-dfy]').forEach((button) => {

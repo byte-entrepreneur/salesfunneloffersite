@@ -410,9 +410,11 @@ app.post('/api/initiate-payment', async (req, res) => {
 // POST /api/subscribe - simple landing page signup -> add contact to MAIN_LIST_KEY
 app.post('/api/subscribe', async (req, res) => {
   try {
-    // Only accept fields that the landing form provides
-    const { name, email, phone, pageEnterAt } = req.body || {};
-    console.log('/api/subscribe payload received:', { name, email, phone, pageEnterAt });
+    // Accept the shared lead fields plus optional StoreLaunch offer context.
+    // The context is used for routing/CRM notes and is persisted separately only
+    // when the connected Appwrite schema already exposes those attributes.
+    const { name, email, phone, pageEnterAt, offer, product } = req.body || {};
+    console.log('/api/subscribe payload received:', { name, email, phone, pageEnterAt, offer, product });
     if (!name || !email) return res.status(400).json({ error: 'Missing name or email' });
     if (!isValidEmail(email)) return res.status(400).json({ error: 'Invalid email address' });
 
@@ -441,6 +443,19 @@ app.post('/api/subscribe', async (req, res) => {
           signupId = doc.$id;
         }
       }
+
+      // StoreLaunch fields are optional so legacy collections remain compatible.
+      // If the schema has no such attributes, keep the lead and continue.
+      if (signupId && (offer || product)) {
+        try {
+          await databases.updateDocument(SIGNUPS_DB, SIGNUPS_COLLECTION, signupId, {
+            offer: offer || '',
+            product: product || ''
+          });
+        } catch (e) {
+          console.warn('Optional StoreLaunch lead context was not persisted (non-fatal):', e.message || e);
+        }
+      }
     } catch (e) {
       console.warn('Signup upsert failed (non-fatal):', e.message || e);
     }
@@ -464,7 +479,10 @@ app.post('/api/subscribe', async (req, res) => {
         const listKey = process.env.MAIN_LIST_KEY;
         // If we don't have a signupId (persistence was skipped), still attempt Zoho but we can't mark the signup record.
         if (!signupId) {
-          await zohoAPIUpdate(databases, { name, email, phone }, listKey, 'Landing signup (no signupId)');
+          const source = offer === 'dfy'
+            ? `StoreLaunch DFY application | ${(product || 'product not supplied').replace(/[\r\n]+/g, ' ').slice(0, 120)}`
+            : 'Landing signup (no signupId)';
+          await zohoAPIUpdate(databases, { name, email, phone, offer, product }, listKey, source);
           return;
         }
 
@@ -481,7 +499,10 @@ app.post('/api/subscribe', async (req, res) => {
           return;
         }
 
-        const zohoRes = await zohoAPIUpdate(databases, { name, email, phone }, listKey, 'Landing signup');
+        const source = offer === 'dfy'
+          ? `StoreLaunch DFY application | ${(product || 'product not supplied').replace(/[\r\n]+/g, ' ').slice(0, 120)}`
+          : 'Landing signup';
+        const zohoRes = await zohoAPIUpdate(databases, { name, email, phone, offer, product }, listKey, source);
         if (zohoRes && (zohoRes.ok || zohoRes.result)) {
           try {
             if (SIGNUPS_COLLECTION) {

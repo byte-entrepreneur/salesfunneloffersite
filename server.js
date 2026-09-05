@@ -54,11 +54,27 @@ app.use(express.static(publicDir));
 // serve landing page at root for convenience
 app.get('/', (req, res) => {
   try {
-    return res.sendFile(path.join(publicDir, 'ebookLandingPage.html'));
+    return res.sendFile(path.join(publicDir, 'index.html'));
   } catch (err) {
     return res.status(500).send('Unable to load landing page');
   }
 });
+
+// StoreLaunch orders use their own delivery page while legacy trading orders
+// continue to use the original thank-you flow.
+function isStoreLaunchOrder(order) {
+  if (!order || !order.orderDetails) return false;
+  try {
+    const details = typeof order.orderDetails === 'string' ? JSON.parse(order.orderDetails) : order.orderDetails;
+    return details && details.product === '100m_online_stores';
+  } catch (e) {
+    return false;
+  }
+}
+
+function getThankYouPath(order) {
+  return isStoreLaunchOrder(order) ? '/store-launch-thankyou.html' : '/thankyou-order.html';
+}
 
 // Temporary debug route to inspect public directory
 import fs from 'fs';
@@ -394,9 +410,11 @@ app.post('/api/initiate-payment', async (req, res) => {
 // POST /api/subscribe - simple landing page signup -> add contact to MAIN_LIST_KEY
 app.post('/api/subscribe', async (req, res) => {
   try {
-    // Only accept fields that the landing form provides
-    const { name, email, phone, pageEnterAt } = req.body || {};
-    console.log('/api/subscribe payload received:', { name, email, phone, pageEnterAt });
+    // Accept the shared lead fields plus optional StoreLaunch offer context.
+    // The context is used for routing/CRM notes and is persisted separately only
+    // when the connected Appwrite schema already exposes those attributes.
+    const { name, email, phone, pageEnterAt, offer, product } = req.body || {};
+    console.log('/api/subscribe payload received:', { name, email, phone, pageEnterAt, offer, product });
     if (!name || !email) return res.status(400).json({ error: 'Missing name or email' });
     if (!isValidEmail(email)) return res.status(400).json({ error: 'Invalid email address' });
 
@@ -425,6 +443,19 @@ app.post('/api/subscribe', async (req, res) => {
           signupId = doc.$id;
         }
       }
+
+      // StoreLaunch fields are optional so legacy collections remain compatible.
+      // If the schema has no such attributes, keep the lead and continue.
+      if (signupId && (offer || product)) {
+        try {
+          await databases.updateDocument(SIGNUPS_DB, SIGNUPS_COLLECTION, signupId, {
+            offer: offer || '',
+            product: product || ''
+          });
+        } catch (e) {
+          console.warn('Optional StoreLaunch lead context was not persisted (non-fatal):', e.message || e);
+        }
+      }
     } catch (e) {
       console.warn('Signup upsert failed (non-fatal):', e.message || e);
     }
@@ -448,7 +479,10 @@ app.post('/api/subscribe', async (req, res) => {
         const listKey = process.env.MAIN_LIST_KEY;
         // If we don't have a signupId (persistence was skipped), still attempt Zoho but we can't mark the signup record.
         if (!signupId) {
-          await zohoAPIUpdate(databases, { name, email, phone }, listKey, 'Landing signup (no signupId)');
+          const source = offer === 'dfy'
+            ? `StoreLaunch DFY application | ${(product || 'product not supplied').replace(/[\r\n]+/g, ' ').slice(0, 120)}`
+            : 'Landing signup (no signupId)';
+          await zohoAPIUpdate(databases, { name, email, phone, offer, product }, listKey, source);
           return;
         }
 
@@ -465,7 +499,10 @@ app.post('/api/subscribe', async (req, res) => {
           return;
         }
 
-        const zohoRes = await zohoAPIUpdate(databases, { name, email, phone }, listKey, 'Landing signup');
+        const source = offer === 'dfy'
+          ? `StoreLaunch DFY application | ${(product || 'product not supplied').replace(/[\r\n]+/g, ' ').slice(0, 120)}`
+          : 'Landing signup';
+        const zohoRes = await zohoAPIUpdate(databases, { name, email, phone, offer, product }, listKey, source);
         if (zohoRes && (zohoRes.ok || zohoRes.result)) {
           try {
             if (SIGNUPS_COLLECTION) {
@@ -894,10 +931,11 @@ app.get('/api/paystack-callback', async (req, res) => {
 
     // Redirect buyer to thank you page with name/email and reference
     const frontendBase = process.env.FRONTEND_BASE_URL || '';
-    const thankUrl = new URL(frontendBase + '/thankyou-order.html', 'http://localhost');
+    const thankUrl = new URL(frontendBase + getThankYouPath(order), 'http://localhost');
     if (order.name) thankUrl.searchParams.set('name', order.name);
     if (order.email) thankUrl.searchParams.set('email', order.email);
     if (reference) thankUrl.searchParams.set('reference', reference);
+    if (order.amount) thankUrl.searchParams.set('amount', String(order.amount));
     if (telegramInviteLink) {
       thankUrl.searchParams.set('telegram', telegramInviteLink);
       }
@@ -1120,7 +1158,7 @@ app.post('/api/paystack-callback', async (req, res) => {
       orderId: order.$id,
       status: 'Payment confirmed',
       telegramInviteLink,
-      redirectUrl: `${process.env.FRONTEND_BASE_URL}/thankyou-order.html?reference=${reference}`
+      redirectUrl: `${process.env.FRONTEND_BASE_URL || ''}${getThankYouPath(order)}?reference=${reference}${order.amount ? `&amount=${encodeURIComponent(order.amount)}` : ''}`
     });
   } catch (err) {
     console.error('[Callback POST] Error:', err);

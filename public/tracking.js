@@ -1,6 +1,18 @@
 (function () {
   "use strict";
 
+  function loadStoreLaunchVisualTuning() {
+    if (!document.querySelector('link[data-storelaunch-reference]')) {
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/store-launch-reference.css';
+      link.setAttribute('data-storelaunch-reference', '1');
+      document.head.appendChild(link);
+    }
+  }
+
+  loadStoreLaunchVisualTuning();
+
   var config = window.STORE_TRACKING_CONFIG || {};
   var query = new URLSearchParams(window.location.search);
   var reference = query.get("reference") || query.get("trxref") || query.get("transaction_id") || "";

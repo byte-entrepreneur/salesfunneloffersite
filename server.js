@@ -226,6 +226,127 @@ const ORDERS_COLLECTION = process.env.ORDERS_COLLECTION_ID;
 const SIGNUPS_DB = process.env.SIGNUPS_DATABASE_ID || 'sign_ups';
 const SIGNUPS_COLLECTION = process.env.SIGNUPS_COLLECTION_ID || process.env.APPWRITE_SIGNUPS_COLLECTION_ID;
 
+/* Server-side tracking: Meta Conversions API + public tracking configuration. */
+const META_PIXEL_ID = String(process.env.META_PIXEL_ID || '').trim();
+const META_CAPI_ACCESS_TOKEN = String(process.env.META_CONVERSIONS_API_ACCESS_TOKEN || '').trim();
+const META_TEST_EVENT_CODE = String(process.env.META_TEST_EVENT_CODE || '').trim();
+const META_GRAPH_API_VERSION = String(process.env.META_GRAPH_API_VERSION || 'v24.0').trim();
+const META_CURRENCY = String(process.env.META_CURRENCY || 'NGN').trim();
+const META_ORDERS_DATABASE_ID = ORDERS_DB;
+const META_ORDERS_COLLECTION_ID = ORDERS_COLLECTION || '';
+const META_EVENT_NAMES = new Set(['ViewContent', 'InitiateCheckout', 'Lead', 'Purchase']);
+
+function normalizeMetaEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function normalizeMetaPhone(value) {
+  let digits = String(value || '').replace(/\D/g, '');
+  if (digits.startsWith('00')) digits = digits.slice(2);
+  if (digits.startsWith('0')) digits = '234' + digits.slice(1);
+  return digits;
+}
+
+function hashMetaValue(value) {
+  return crypto.createHash('sha256').update(String(value)).digest('hex');
+}
+
+function buildMetaUserData({ name, email, phone, req, fbp, fbc } = {}) {
+  const userData = {};
+  const normalizedName = String(name || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const normalizedEmail = normalizeMetaEmail(email);
+  const normalizedPhone = normalizeMetaPhone(phone);
+  if (normalizedName[0]) userData.fn = [hashMetaValue(normalizedName[0])];
+  if (normalizedName.length > 1) userData.ln = [hashMetaValue(normalizedName.slice(1).join(' '))];
+  if (normalizedEmail) userData.em = [hashMetaValue(normalizedEmail)];
+  if (normalizedPhone) userData.ph = [hashMetaValue(normalizedPhone)];
+  if (req) {
+    const forwardedFor = String(req.headers?.['x-forwarded-for'] || '').split(',')[0].trim();
+    const ip = forwardedFor || String(req.ip || '').trim();
+    const userAgent = String(req.get?.('user-agent') || '').trim();
+    if (ip) userData.client_ip_address = ip;
+    if (userAgent) userData.client_user_agent = userAgent;
+  }
+  if (fbp) userData.fbp = String(fbp);
+  if (fbc) userData.fbc = String(fbc);
+  return userData;
+}
+
+async function sendMetaConversionEvent({ eventName, eventId, eventSourceUrl, value, currency = META_CURRENCY, customData = {}, userData = {}, req } = {}) {
+  if (!META_PIXEL_ID || !META_CAPI_ACCESS_TOKEN) return { skipped: true };
+  if (!META_EVENT_NAMES.has(eventName)) throw new Error('Unsupported Meta event name');
+  const body = {
+    data: [{
+      event_name: eventName,
+      event_time: Math.floor(Date.now() / 1000),
+      event_id: eventId || crypto.randomUUID(),
+      action_source: 'website',
+      event_source_url: eventSourceUrl || process.env.FRONTEND_BASE_URL || process.env.BACKEND_BASE_URL || 'http://localhost:3000',
+      user_data: buildMetaUserData({ ...userData, req }),
+      custom_data: Object.assign({ currency, value: Number(value || 0) }, customData || {})
+    }]
+  };
+  if (META_TEST_EVENT_CODE) body.test_event_code = META_TEST_EVENT_CODE;
+  const response = await fetch('https://graph.facebook.com/' + META_GRAPH_API_VERSION + '/' + META_PIXEL_ID + '/events?access_token=' + encodeURIComponent(META_CAPI_ACCESS_TOKEN), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error('Meta Conversions API returned HTTP ' + response.status);
+  return result;
+}
+
+app.get('/api/tracking-config', (req, res) => res.json({
+  metaPixelId: META_PIXEL_ID,
+  googleTagId: process.env.GA_MEASUREMENT_ID || process.env.GOOGLE_TAG_ID || '',
+  googleAdsConversionId: process.env.GOOGLE_ADS_CONVERSION_ID || process.env.GOOGLE_ADS_ID || '',
+  googleAdsConversionLabel: process.env.GOOGLE_ADS_CONVERSION_LABEL || ''
+}));
+
+app.post('/api/meta-conversion', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const eventName = String(body.eventName || '').trim();
+    const eventId = String(body.eventId || '').trim();
+    if (!META_EVENT_NAMES.has(eventName)) return res.status(400).json({ error: 'Unsupported Meta event name.' });
+    if (!META_PIXEL_ID || !META_CAPI_ACCESS_TOKEN) return res.status(503).json({ skipped: true, message: 'Meta Conversions API is not configured.' });
+
+    let value = body.value;
+    let customData = body.customData || {};
+    let userData = body.userData || {};
+    if (eventName === 'Purchase') {
+      if (!eventId) return res.status(400).json({ error: 'A verified payment reference is required for a Purchase event.' });
+      const docs = await databases.listDocuments(META_ORDERS_DATABASE_ID, META_ORDERS_COLLECTION_ID, [Query.equal('paystackReference', eventId), Query.limit(1)]);
+      const order = docs.documents?.[0];
+      const status = String(order?.status || '').trim().toLowerCase();
+      const paid = status === 'paid' || status === 'success' || status === 'successful' || Boolean(order?.paidAt);
+      if (!order || !paid) return res.status(409).json({ error: 'Purchase event rejected until the payment is verified.' });
+      value = Number(order.amount) || Number(value || 0);
+      userData = { name: order.name, email: order.email, phone: order.phone };
+      customData = Object.assign({}, customData, {
+        content_name: customData.content_name || process.env.STORE_PRODUCT_NAME || 'Trading Bot Mafia purchase',
+        content_type: customData.content_type || 'product'
+      });
+    }
+
+    const result = await sendMetaConversionEvent({
+      eventName,
+      eventId: eventId || undefined,
+      eventSourceUrl: String(body.eventSourceUrl || '').trim(),
+      value,
+      currency: body.currency || META_CURRENCY,
+      customData,
+      userData,
+      req
+    });
+    return res.json({ ok: true, result });
+  } catch (error) {
+    console.error('Meta conversion error:', error.message || error);
+    return res.status(502).json({ error: 'Meta conversion event could not be sent.' });
+  }
+});
+
 // POST /api/initiate-payment
 // simple email validator (basic, permissive)
 function isValidEmail(email) {
@@ -692,6 +813,21 @@ app.post('/api/paystack-webhook', async (req, res) => {
         // If Appwrite schema doesn't allow `boughtWithinOfferWindow`, fall back to updating without it
         console.warn('Unable to persist boughtWithinOfferWindow to order (non-fatal):', e.message || e);
         await databases.updateDocument(ORDERS_DB, ORDERS_COLLECTION, order.$id, { status: 'paid', paidAt, timeSpentUntilPaidMs });
+      }
+
+      try {
+        await sendMetaConversionEvent({
+          eventName: 'Purchase',
+          eventId: String(paymentData.reference),
+          eventSourceUrl: process.env.FRONTEND_BASE_URL || process.env.BACKEND_BASE_URL || 'http://localhost:3000',
+          value: Number(order.amount) || Number(paymentData.amount || 0) / 100,
+          currency: process.env.META_CURRENCY || 'NGN',
+          userData: { name: order.name, email: order.email, phone: order.phone },
+          customData: { content_name: process.env.STORE_PRODUCT_NAME || 'Trading Bot Mafia purchase', content_type: 'product' },
+          req
+        });
+      } catch (metaError) {
+        console.warn('Meta Purchase event failed (non-fatal):', metaError.message || metaError);
       }
 
       const paidListKey = purchasedBeforeDeadline ? process.env.PAID_BEFORE_LIST_KEY || process.env.PAID_LIST_KEY : process.env.PAID_AFTER_LIST_KEY || process.env.PAID_LIST_KEY;

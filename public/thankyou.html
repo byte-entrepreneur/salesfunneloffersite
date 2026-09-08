@@ -1,38 +1,22 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Thank you</title>
-  <link rel="stylesheet" href="styles.css" />
-  <style>
-    .thanks{max-width:900px;margin:96px auto;padding:40px;background:var(--white);border-radius:14px;text-align:center}
-    .cta{margin-top:18px}
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#070707">
+  <title>Payment update — StoreLaunch Pro</title>
+  <link rel="stylesheet" href="/styles.css">
 </head>
-<body class="tech-luxe-page simple-thanks-page">
-  <div class="container">
-    <div class="thanks">
-      <h1 id="title">Thank you</h1>
-      <p id="message">We're processing your purchase.</p>
-
-      <div class="cta">
-        <a id="downloadLink" href="#" style="background:var(--gold);color:var(--deep-green);padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:700">Download bundle</a>
-      </div>
+<body>
+  <main class="thankyou-page">
+    <div class="thankyou-card">
+      <div class="brand-mark"><span class="brand-mark__diamond" aria-hidden="true">◆</span><span>STORELAUNCH <b>PRO</b></span></div>
+      <div class="thankyou-check thankyou-check--alert" aria-hidden="true">!</div>
+      <p class="modal-kicker">PAYMENT UPDATE</p>
+      <h1 class="funnel-display">Your payment did not complete.</h1>
+      <p>If money was deducted, please keep your payment reference and contact your payment provider. Otherwise, return to the store and try again.</p>
+      <a class="funnel-cta thankyou-button" href="/">RETURN TO STORELAUNCH <span aria-hidden="true">→</span></a>
     </div>
-  </div>
-
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const name = params.get('name') || '';
-    const email = params.get('email') || '';
-    const title = document.getElementById('title');
-    const message = document.getElementById('message');
-    const downloadLink = document.getElementById('downloadLink');
-
-    if(name) title.textContent = `Thanks, ${name.split(' ')[0]}!`;
-    if(email) message.textContent = `A receipt will be sent to ${email}. If you paid, your download will be available here shortly.`;
-    downloadLink.href = '#'; // Replace with actual download URL once payment confirmation server-side exists
-  </script>
+  </main>
 </body>
 </html>

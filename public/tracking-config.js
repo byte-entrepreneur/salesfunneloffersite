@@ -1,8 +1,1 @@
-window.STORE_TRACKING_CONFIG = {
-  metaPixelId: "",
-  googleTagId: "",
-  googleAdsConversionId: "",
-  googleAdsConversionLabel: "",
-  productName: "Trading Bot Mafia Automation Bundle",
-  currency: "NGN"
-};
+window.STORELAUNCH_TRACKING = window.STORELAUNCH_TRACKING || { metaPixelId: "", gaMeasurementId: "", googleAdsId: "" };

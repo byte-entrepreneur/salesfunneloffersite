@@ -54,7 +54,7 @@ app.use(express.static(publicDir));
 // serve landing page at root for convenience
 app.get('/', (req, res) => {
   try {
-    return res.sendFile(path.join(publicDir, 'ebookLandingPage.html'));
+    return res.sendFile(path.join(publicDir, 'index.html'));
   } catch (err) {
     return res.status(500).send('Unable to load landing page');
   }
@@ -225,6 +225,9 @@ const ORDERS_DB = process.env.ORDERS_DATABASE_ID || 'ordersDB';
 const ORDERS_COLLECTION = process.env.ORDERS_COLLECTION_ID;
 const SIGNUPS_DB = process.env.SIGNUPS_DATABASE_ID || 'sign_ups';
 const SIGNUPS_COLLECTION = process.env.SIGNUPS_COLLECTION_ID || process.env.APPWRITE_SIGNUPS_COLLECTION_ID;
+const DIY_LIST_KEY = process.env.DIY_LIST_KEY || process.env.MAIN_LIST_KEY;
+const DFY_LIST_KEY = process.env.DFY_LIST_KEY || process.env.MAIN_LIST_KEY;
+const getOfferListKey = (type) => type === 'dfy' ? DFY_LIST_KEY : DIY_LIST_KEY;
 
 // POST /api/initiate-payment
 // simple email validator (basic, permissive)
@@ -384,106 +387,168 @@ app.post('/api/initiate-payment', async (req, res) => {
     // and on payment completion (webhook/callback). This avoids repeated Zoho requests.
 
     // Return authorization URL to frontend so it can redirect the user
-    res.json({ authorization_url: initData.data.authorization_url, reference });
+    res.json({
+      authorization_url: initData.data.authorization_url,
+      access_code: initData.data.access_code,
+      reference
+    });
   } catch (err) {
     console.error('initiate-payment error', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST /api/subscribe - simple landing page signup -> add contact to MAIN_LIST_KEY
+// POST /api/subscribe - save a StoreLaunch lead and route it to the correct list
 app.post('/api/subscribe', async (req, res) => {
   try {
-    // Only accept fields that the landing form provides
-    const { name, email, phone, pageEnterAt } = req.body || {};
-    console.log('/api/subscribe payload received:', { name, email, phone, pageEnterAt });
+    const {
+      name,
+      email,
+      phone,
+      pageEnterAt,
+      offerType = 'dfy',
+      product = ''
+    } = req.body || {};
+    const normalizedOfferType = String(offerType).toLowerCase() === 'diy' ? 'diy' : 'dfy';
+    const selectedProduct = String(product || (normalizedOfferType === 'diy' ? 'StoreLaunch DIY Kit' : '')).trim().slice(0, 500);
+    console.log('/api/subscribe payload received:', {
+      name,
+      email,
+      phone,
+      offerType: normalizedOfferType,
+      product: selectedProduct,
+      pageEnterAt
+    });
+
     if (!name || !email) return res.status(400).json({ error: 'Missing name or email' });
     if (!isValidEmail(email)) return res.status(400).json({ error: 'Invalid email address' });
+    if (normalizedOfferType === 'dfy' && !phone) {
+      return res.status(400).json({ error: 'Phone number is required for a done-for-you request' });
+    }
+    if (phone && !/^[0-9+\-().\\s]{7,30}$/.test(phone)) {
+      return res.status(400).json({ error: 'Invalid phone number' });
+    }
 
-    // Upsert signup record in signups collection if available
     let signupId = null;
     try {
       if (SIGNUPS_COLLECTION) {
-        // Build a secure, unguessable signup id. Use crypto.randomUUID when available.
         const nowMs = pageEnterAt ? Number(pageEnterAt) : Date.now();
-        const namePart = (name || '').toLowerCase().replace(/[^a-z]/g, '').slice(0,3) || 'usr';
-        let candidateId;
-        if (crypto.randomUUID) candidateId = crypto.randomUUID();
-        else candidateId = nowMs.toString(36) + '_' + crypto.randomBytes(8).toString('hex');
+        const candidateId = crypto.randomUUID
+          ? crypto.randomUUID()
+          : nowMs.toString(36) + '_' + crypto.randomBytes(8).toString('hex');
+        const basePayload = {
+          name,
+          email,
+          phone,
+          pageEnterAt: nowMs,
+          lastSeenAt: Date.now(),
+          createdAt: new Date().toISOString()
+        };
+        const routedPayload = {
+          ...basePayload,
+          offerType: normalizedOfferType,
+          product: selectedProduct
+        };
+        const isSchemaError = (error) => /unknown attribute|invalid document structure|attribute/i.test(String(error?.message || error));
 
-        // Try to find existing by email first
-        const foundByEmail = await databases.listDocuments(SIGNUPS_DB, SIGNUPS_COLLECTION, [ Query.equal('email', email) ]);
-  const signupPayload = { name, email, phone, pageEnterAt: nowMs, lastSeenAt: Date.now(), createdAt: new Date().toISOString() };
+        const foundByEmail = await databases.listDocuments(
+          SIGNUPS_DB,
+          SIGNUPS_COLLECTION,
+          [Query.equal('email', email)]
+        );
 
-        if (foundByEmail && foundByEmail.documents && foundByEmail.documents.length) {
+        if (foundByEmail?.documents?.length) {
           const existing = foundByEmail.documents[0];
           signupId = existing.$id;
-          await databases.updateDocument(SIGNUPS_DB, SIGNUPS_COLLECTION, existing.$id, signupPayload);
-        } else {
-          // Create document with our secure id so client doesn't need to manage it.
-          const doc = await databases.createDocument(SIGNUPS_DB, SIGNUPS_COLLECTION, candidateId, signupPayload);
-          signupId = doc.$id;
-        }
-      }
-    } catch (e) {
-      console.warn('Signup upsert failed (non-fatal):', e.message || e);
-    }
-
-    // Set an httpOnly cookie so the frontend doesn't need to persist or send signupId.
-    // Note: this cookie will only be sent for cross-origin requests when credentials are included.
-      try {
-        res.cookie('signupId', signupId, { httpOnly: true, sameSite: COOKIE_SAMESITE, secure: COOKIE_SECURE, maxAge: 7*24*60*60*1000 });
-      } catch (e) {
-      // If res.cookie isn't available (unlikely), ignore — the JSON still contains the id.
-    }
-
-    // Respond immediately so browser receives cookie and can proceed. Do Zoho update asynchronously
-    res.json({ ok: true, signupId });
-
-    // Fire-and-forget Zoho update (non-blocking) but make it idempotent:
-    // - If the signup doc already records that it was synced to MAIN_LIST_KEY, skip the Zoho call.
-    // - On successful Zoho update, mark the signup doc so future requests won't call Zoho again.
-    (async () => {
-      try {
-        const listKey = process.env.MAIN_LIST_KEY;
-        // If we don't have a signupId (persistence was skipped), still attempt Zoho but we can't mark the signup record.
-        if (!signupId) {
-          await zohoAPIUpdate(databases, { name, email, phone }, listKey, 'Landing signup (no signupId)');
-          return;
-        }
-
-        let latest = null;
-        try {
-          if (SIGNUPS_COLLECTION) latest = await databases.getDocument(SIGNUPS_DB, SIGNUPS_COLLECTION, signupId);
-        } catch (e) {
-          // If fetching the latest signup fails, proceed to attempt Zoho (we'll still try to mark it after)
-          latest = null;
-        }
-
-        if (latest && latest.zohoSubscribedListKey === listKey) {
-          console.log('Zoho subscribe skipped: signup already marked for list', listKey, signupId);
-          return;
-        }
-
-        const zohoRes = await zohoAPIUpdate(databases, { name, email, phone }, listKey, 'Landing signup');
-        if (zohoRes && (zohoRes.ok || zohoRes.result)) {
           try {
-            if (SIGNUPS_COLLECTION) {
-              await databases.updateDocument(SIGNUPS_DB, SIGNUPS_COLLECTION, signupId, { zohoSubscribedAt: Date.now(), zohoSubscribedListKey: listKey });
-            }
-          } catch (e) {
-            console.warn('Failed to mark signup as zohoSubscribed (non-fatal):', e.message || e);
+            await databases.updateDocument(SIGNUPS_DB, SIGNUPS_COLLECTION, existing.$id, routedPayload);
+          } catch (error) {
+            if (!isSchemaError(error)) throw error;
+            console.warn('Signup route fields are not in Appwrite yet; saving the compatible fields instead.');
+            await databases.updateDocument(SIGNUPS_DB, SIGNUPS_COLLECTION, existing.$id, basePayload);
           }
         } else {
-          console.warn('zohoAPIUpdate returned non-ok result for subscribe:', zohoRes);
+          try {
+            const doc = await databases.createDocument(SIGNUPS_DB, SIGNUPS_COLLECTION, candidateId, routedPayload);
+            signupId = doc.$id;
+          } catch (error) {
+            if (!isSchemaError(error)) throw error;
+            console.warn('Signup route fields are not in Appwrite yet; creating the compatible fields instead.');
+            const doc = await databases.createDocument(SIGNUPS_DB, SIGNUPS_COLLECTION, candidateId, basePayload);
+            signupId = doc.$id;
+          }
         }
-      } catch (zerr) {
-        console.error('Zoho subscribe (async) failed:', zerr && zerr.message ? zerr.message : zerr);
+      }
+    } catch (error) {
+      console.warn('Signup upsert failed (non-fatal):', error.message || error);
+    }
+
+    try {
+      res.cookie('signupId', signupId, {
+        httpOnly: true,
+        sameSite: COOKIE_SAMESITE,
+        secure: COOKIE_SECURE,
+        maxAge: 7 * 24 * 60 * 60 * 1000
+      });
+    } catch (error) {
+      console.warn('Could not set signup cookie (non-fatal):', error.message || error);
+    }
+
+    res.json({ ok: true, signupId, offerType: normalizedOfferType });
+
+    (async () => {
+      try {
+        const listKey = getOfferListKey(normalizedOfferType);
+        if (!listKey) {
+          console.warn('No Zoho list key configured for StoreLaunch', normalizedOfferType);
+          return;
+        }
+
+        if (signupId && SIGNUPS_COLLECTION) {
+          let latest = null;
+          try {
+            latest = await databases.getDocument(SIGNUPS_DB, SIGNUPS_COLLECTION, signupId);
+          } catch (error) {
+            console.warn('Could not reload signup before Zoho sync (non-fatal):', error.message || error);
+          }
+          if (latest && latest.zohoSubscribedListKey === listKey) {
+            console.log('Zoho subscribe skipped: signup already marked for list', listKey, signupId);
+            return;
+          }
+        }
+
+        const source = 'StoreLaunch ' + normalizedOfferType.toUpperCase() + ' lead' +
+          (selectedProduct ? ' · ' + selectedProduct.slice(0, 120) : '');
+        const zohoRes = await zohoAPIUpdate(
+          databases,
+          { name, email, phone, offerType: normalizedOfferType, product: selectedProduct },
+          listKey,
+          source
+        );
+
+        if (zohoRes && (zohoRes.ok || zohoRes.result)) {
+          try {
+            if (signupId && SIGNUPS_COLLECTION) {
+              await databases.updateDocument(
+                SIGNUPS_DB,
+                SIGNUPS_COLLECTION,
+                signupId,
+                { zohoSubscribedAt: Date.now(), zohoSubscribedListKey: listKey }
+              );
+            }
+          } catch (error) {
+            console.warn('Failed to mark signup as synced to Zoho (non-fatal):', error.message || error);
+          }
+        } else {
+          console.warn('zohoAPIUpdate returned non-ok result for StoreLaunch lead:', zohoRes);
+        }
+      } catch (error) {
+        console.error('Zoho StoreLaunch sync (async) failed:', error?.message || error);
       }
     })();
-  } catch (err) {
-    console.error('subscribe error', err);
-    return res.status(500).json({ error: err.message });
+  } catch (error) {
+    console.error('subscribe error', error);
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -694,7 +759,21 @@ app.post('/api/paystack-webhook', async (req, res) => {
         await databases.updateDocument(ORDERS_DB, ORDERS_COLLECTION, order.$id, { status: 'paid', paidAt, timeSpentUntilPaidMs });
       }
 
-      const paidListKey = purchasedBeforeDeadline ? process.env.PAID_BEFORE_LIST_KEY || process.env.PAID_LIST_KEY : process.env.PAID_AFTER_LIST_KEY || process.env.PAID_LIST_KEY;
+      
+      try {
+        await sendMetaConversionEvent({
+          eventName: 'Purchase',
+          eventId: String(paymentData.reference),
+          eventSourceUrl: (FRONTEND_BASE || BACKEND_BASE || 'http://localhost:3000') + '/',
+          value: Number(order.amount) || Number(paymentData.amount || 0) / 100,
+          currency: 'NGN',
+          customData: { offer_type: order.offerType || 'diy', product: order.product || 'StoreLaunch DIY Kit' }
+        });
+      } catch (metaError) {
+        console.warn('[webhook] Meta Purchase event failed (non-fatal):', metaError.message || metaError);
+      }
+
+const paidListKey = purchasedBeforeDeadline ? process.env.PAID_BEFORE_LIST_KEY || process.env.PAID_LIST_KEY : process.env.PAID_AFTER_LIST_KEY || process.env.PAID_LIST_KEY;
 
       // Note: Zoho sync intentionally removed from webhook to avoid server-side-only confirmation issues.
       // The webhook now only marks the order as paid. Zoho sync will be performed securely by the
@@ -841,6 +920,20 @@ app.get('/api/paystack-callback', async (req, res) => {
       }
     }
 
+
+    try {
+      await sendMetaConversionEvent({
+        eventName: 'Purchase',
+        eventId: String(payment.reference),
+        eventSourceUrl: (FRONTEND_BASE || BACKEND_BASE || 'http://localhost:3000') + '/',
+        value: Number(order.amount) || Number(payment.amount || 0) / 100,
+        currency: 'NGN',
+        customData: { offer_type: order.offerType || 'diy', product: order.product || 'StoreLaunch DIY Kit' }
+      });
+    } catch (metaError) {
+      console.warn('[callback] Meta Purchase event failed (non-fatal):', metaError.message || metaError);
+    }
+
     // Note: Zoho sync moved to webhook only to avoid duplicate list adds when both
     // webhook and callback are invoked by Paystack. The webhook is the authoritative
     // source for server-side post-payment processing and will perform the Zoho update.
@@ -898,6 +991,7 @@ app.get('/api/paystack-callback', async (req, res) => {
     if (order.name) thankUrl.searchParams.set('name', order.name);
     if (order.email) thankUrl.searchParams.set('email', order.email);
     if (reference) thankUrl.searchParams.set('reference', reference);
+    if (payment.amount != null) thankUrl.searchParams.set('amount', String(Number(payment.amount) / 100));
     if (telegramInviteLink) {
       thankUrl.searchParams.set('telegram', telegramInviteLink);
       }
@@ -1068,7 +1162,21 @@ app.post('/api/paystack-callback', async (req, res) => {
       await databases.updateDocument(ORDERS_DB, ORDERS_COLLECTION, order.$id, { status: 'paid', paidAt, timeSpentUntilPaidMs });
     }
 
-    const paidListKey = purchasedBeforeDeadline ? process.env.PAID_BEFORE_LIST_KEY || process.env.PAID_LIST_KEY : process.env.PAID_AFTER_LIST_KEY || process.env.PAID_LIST_KEY;
+    
+    try {
+      await sendMetaConversionEvent({
+        eventName: 'Purchase',
+        eventId: String(payment.reference),
+        eventSourceUrl: (FRONTEND_BASE || BACKEND_BASE || 'http://localhost:3000') + '/',
+        value: Number(order.amount) || Number(payment.amount || 0) / 100,
+        currency: 'NGN',
+        customData: { offer_type: order.offerType || 'diy', product: order.product || 'StoreLaunch DIY Kit' }
+      });
+    } catch (metaError) {
+      console.warn('[Callback POST] Meta Purchase event failed (non-fatal):', metaError.message || metaError);
+    }
+
+const paidListKey = purchasedBeforeDeadline ? process.env.PAID_BEFORE_LIST_KEY || process.env.PAID_LIST_KEY : process.env.PAID_AFTER_LIST_KEY || process.env.PAID_LIST_KEY;
 
     // Get segmentation list based on which upsells were selected
     const segmentationListKey = getZohoSegmentationList(order.upsellsSelected);
@@ -1232,6 +1340,23 @@ app.post('/api/confirm-unconfirmed-payment', async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 });
+
+
+/* Meta Pixel + Conversions API configuration */
+const META_PIXEL_ID = String(process.env.META_PIXEL_ID || '').trim();
+const META_CAPI_ACCESS_TOKEN = String(process.env.META_CONVERSIONS_API_ACCESS_TOKEN || '').trim();
+const META_TEST_EVENT_CODE = String(process.env.META_TEST_EVENT_CODE || '').trim();
+const META_GRAPH_API_VERSION = String(process.env.META_GRAPH_API_VERSION || 'v24.0').trim();
+async function sendMetaConversionEvent({ eventName, eventId, eventSourceUrl, value, currency = 'NGN', customData = {} }) {
+  if (!META_PIXEL_ID || !META_CAPI_ACCESS_TOKEN) return { skipped: true };
+  const body = { data: [{ event_name: eventName, event_time: Math.floor(Date.now() / 1000), event_id: eventId || crypto.randomUUID(), action_source: 'website', event_source_url: eventSourceUrl || FRONTEND_BASE || BACKEND_BASE || 'http://localhost:3000', custom_data: Object.assign({ currency, value: Number(value || 0) }, customData || {}) }] };
+  if (META_TEST_EVENT_CODE) body.test_event_code = META_TEST_EVENT_CODE;
+  const response = await fetch('https://graph.facebook.com/' + META_GRAPH_API_VERSION + '/' + META_PIXEL_ID + '/events?access_token=' + encodeURIComponent(META_CAPI_ACCESS_TOKEN), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const result = await response.json().catch(() => ({})); if (!response.ok) throw new Error('Meta Conversions API returned HTTP ' + response.status); return result;
+}
+app.get('/api/tracking-config', (req, res) => res.json({ metaPixelId: META_PIXEL_ID, gaMeasurementId: process.env.GA_MEASUREMENT_ID || '', googleAdsId: process.env.GOOGLE_ADS_ID || '' }));
+app.post('/api/meta-conversion', async (req, res) => { try { const body = req.body || {}; if (!META_PIXEL_ID || !META_CAPI_ACCESS_TOKEN) return res.status(503).json({ skipped: true, message: 'Meta Conversions API is not configured.' }); const result = await sendMetaConversionEvent({ eventName: String(body.eventName || '').trim(), eventId: String(body.eventId || '').trim(), eventSourceUrl: String(body.eventSourceUrl || '').trim(), value: body.value, currency: body.currency || 'NGN', customData: body.customData || {} }); return res.json({ ok: true, result }); } catch (error) { console.error('Meta conversion error:', error.message || error); return res.status(502).json({ error: 'Meta conversion event could not be sent.' }); } });
+
 
 export default app;
 

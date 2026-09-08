@@ -34,7 +34,11 @@ export async function getValidZohoToken(databases) {
   }
   // Try to read token from Appwrite if available (fallback)
   try {
-    const tokenDoc = await databases.listDocuments("ordersDB", "zohoTokens");
+    // Buyers can keep this collection in the same Appwrite database as Orders
+    // or point it at a separate database when they already have one.
+    const tokenDatabaseId = process.env.ZOHO_TOKENS_DATABASE_ID || process.env.ORDERS_DATABASE_ID || "ordersDB";
+    const tokenCollectionId = process.env.ZOHO_TOKENS_COLLECTION_ID || "zohoTokens";
+    const tokenDoc = await databases.listDocuments(tokenDatabaseId, tokenCollectionId);
     const tokenData = tokenDoc.documents && tokenDoc.documents[0];
 
     if (tokenData) {
@@ -64,7 +68,7 @@ export async function getValidZohoToken(databases) {
 
         // Save new token back to Appwrite if we have an id
         try {
-          await databases.updateDocument("ordersDB", "zohoTokens", tokenData.$id, {
+          await databases.updateDocument(tokenDatabaseId, tokenCollectionId, tokenData.$id, {
             access_token: result.access_token,
             expiry_time: Date.now() + (result.expires_in || 3600) * 1000,
           });
